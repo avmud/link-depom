@@ -3,155 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp - Profesyonel Link Yönetimi</title>
+    <title>LinkUp - Listelerim</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
-    <style>
-        .card:hover { transform: translateY(-8px); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        body { transition: background-color 0.3s, color 0.3s; }
-    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 min-h-screen p-4 md:p-12 text-slate-800 dark:text-slate-100 font-sans text-sm">
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen p-4 md:p-12 text-slate-800 dark:text-slate-100 font-sans">
 
     <div class="max-w-6xl mx-auto">
-        <header class="text-center mb-12 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-lg">L</div>
-                <h1 class="text-3xl font-black tracking-tight">Link<span class="text-indigo-600">Up</span></h1>
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-black text-indigo-600">LinkUp</h1>
+            <div class="flex gap-2">
+                <button onclick="listeOlusturPrompt()" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">+ YENİ LİSTE</button>
+                <button onclick="document.documentElement.classList.toggle('dark')" class="p-2 bg-white dark:bg-slate-800 rounded-xl shadow">🌙</button>
             </div>
-            <button onclick="temaDegistir()" class="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:rotate-12 transition-all">
-                <span id="temaIkon" class="text-xl">🌙</span>
-            </button>
         </header>
+
+        <div id="listeSekmeleri" class="flex flex-wrap gap-2 mb-8 justify-center"></div>
         
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 dark:border-slate-700 mb-10">
-            <div class="flex flex-col gap-5">
-                <input id="linkInput" type="text" placeholder="https://..." class="w-full p-5 bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none text-lg transition-all">
-                <div class="flex flex-col md:flex-row gap-3">
-                    <input id="tagInput" type="text" placeholder="Etiketler (virgülle ayırın)" class="flex-1 p-5 bg-slate-50 dark:bg-slate-700/50 border-2 border-transparent focus:border-indigo-500 rounded-2xl outline-none transition-all">
-                    <button id="ekleButon" onclick="linkAnalizEt()" class="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black hover:bg-indigo-700 shadow-xl transition-all active:scale-95">ARŞİVE EKLE</button>
-                </div>
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-xl mb-10 border border-slate-100 dark:border-slate-700">
+            <div class="flex flex-col md:flex-row gap-3">
+                <input id="linkInput" type="text" placeholder="https://..." class="flex-[2] p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 transition-all">
+                <input id="tagInput" type="text" placeholder="Etiketler..." class="flex-1 p-4 bg-slate-50 dark:bg-slate-700 rounded-2xl outline-none">
+                <button id="ekleButon" onclick="linkEkle()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black hover:bg-indigo-700 transition-all">EKLE</button>
             </div>
         </div>
 
-        <div class="mb-12 space-y-6">
-            <input type="text" id="aramaKutusu" onkeyup="aramaYap()" placeholder="Ara..." class="max-w-md mx-auto block w-full py-4 px-12 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none shadow-sm focus:ring-2 focus:ring-indigo-500 text-center">
-            <div id="etiketBulutu" class="flex flex-wrap gap-2 justify-center"></div>
-        </div>
-
-        <div id="liste" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-24"></div>
-
-        <footer class="mt-20 pt-12 border-t border-slate-200 dark:border-slate-800 text-center text-slate-500 pb-12">
-            <div class="flex justify-center gap-8 mb-6 font-bold uppercase text-[10px] tracking-widest">
-                <button onclick="modalAc('about')" class="hover:text-indigo-600">Hakkımızda</button>
-                <button onclick="modalAc('privacy')" class="hover:text-indigo-600">Gizlilik</button>
-            </div>
-            <p>&copy; 2026 LinkUp</p>
-        </footer>
+        <div id="liste" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
     </div>
 
 <script>
     const API_URL = "https://link-depom-sunucu.onrender.com";
+    let aktifListe = "HEPSİ";
 
-    async function linkleriGetir(filtreEtiket = null) {
-        try {
-            const res = await fetch(`${API_URL}/linkler`);
-            let linkler = await res.json();
-            etiketBulutuOlustur(linkler);
-            if(filtreEtiket) linkler = linkler.filter(l => l.etiketler && l.etiketler.toLowerCase().includes(filtreEtiket.toLowerCase()));
-            const liste = document.getElementById('liste');
-            liste.innerHTML = ''; 
-            linkler.forEach((veri, index) => {
-                const kart = `
-                <div class="card bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 relative flex flex-col h-full group">
-                    <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-all z-10">
-                        <button onclick="etiketDuzenle(${index}, '${veri.etiketler || ''}')" class="bg-blue-500 text-white p-2.5 rounded-xl shadow-lg hover:bg-blue-600">✏️</button>
-                        <button onclick="linkSil(${index})" class="bg-red-500 text-white p-2.5 rounded-xl shadow-lg hover:bg-red-600">🗑️</button>
-                    </div>
-                    <img src="${veri.resim || 'https://via.placeholder.com/400x200'}" class="w-full h-44 object-cover">
-                    <div class="p-7 flex flex-col flex-1">
-                        <h3 class="text-base font-bold mb-4 line-clamp-2">${veri.baslik}</h3>
-                        <div class="flex flex-wrap gap-1.5 mb-6">
-                            ${veri.etiketler ? veri.etiketler.split(',').map(e => `<span class="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-lg font-bold">#${e.trim().toUpperCase()}</span>`).join('') : '<span class="text-[10px] text-slate-400 italic">Etiketsiz</span>'}
-                        </div>
-                        <button onclick="tikla(${index}, '${veri.link}')" class="mt-auto w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs hover:bg-indigo-700 shadow-lg active:scale-95">ZİYARET ET</button>
-                    </div>
-                </div>`;
-                liste.insertAdjacentHTML('afterbegin', kart);
-            });
-        } catch (err) { console.log("Hata..."); }
-    }
-
-    async function etiketDuzenle(index, eskiEtiketler) {
-        const yeniEtiketler = prompt("Yeni etiketleri girin (virgülle ayırın):", eskiEtiketler);
-        if (yeniEtiketler === null) return;
-
-        try {
-            const response = await fetch(`${API_URL}/guncelle/${index}`, {
-                method: 'PATCH',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ etiketler: yeniEtiketler })
-            });
-            if(response.ok) await linkleriGetir();
-        } catch (e) { alert("Güncellenemedi."); }
-    }
-
-    async function linkAnalizEt() {
+    async function linkEkle() {
         const lInput = document.getElementById('linkInput');
         const tInput = document.getElementById('tagInput');
         const btn = document.getElementById('ekleButon');
-        if(!lInput.value.trim().startsWith('http')) return alert("Geçerli link girin!");
-        btn.innerText = "YÜKLENİYOR...";
+
+        if(!lInput.value.startsWith('http')) return alert("Link girin!");
+
+        btn.innerText = "EKLENİYOR...";
         btn.disabled = true;
-        try {
-            await fetch(`${API_URL}/analiz`, {
+
+        await fetch(`${API_URL}/analiz`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ linkUrl: lInput.value, etiketler: tInput.value })
+        });
+
+        lInput.value = ''; tInput.value = '';
+        btn.innerText = "EKLE";
+        btn.disabled = false;
+        verileriYukle();
+    }
+
+    async function listeOlusturPrompt() {
+        const isim = prompt("Yeni liste adı:");
+        if(isim) {
+            await fetch(`${API_URL}/liste-olustur`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ linkUrl: lInput.value, etiketler: tInput.value })
+                body: JSON.stringify({ listeAdi: isim })
             });
-            lInput.value = ''; tInput.value = '';
-            await linkleriGetir();
-        } finally {
-            btn.innerText = "ARŞİVE EKLE";
-            btn.disabled = false;
+            verileriYukle();
         }
     }
 
-    async function tikla(index, url) {
-        await fetch(`${API_URL}/tikla/${index}`, { method: 'POST' });
-        window.open(url, '_blank');
-        linkleriGetir();
+    async function listeyeEkle(linkId) {
+        const res = await fetch(`${API_URL}/listeler`);
+        const listeler = await res.json();
+        const secilenListe = prompt("Hangi listeye eklensin?\nSeçenekler: " + listeler.join(', '));
+        
+        if(secilenListe && listeler.includes(secilenListe)) {
+            await fetch(`${API_URL}/link-listeye-ekle/${linkId}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ listeAdi: secilenListe })
+            });
+            alert("Listeye eklendi!");
+            verileriYukle();
+        }
     }
 
-    function etiketBulutuOlustur(linkler) {
-        const bulut = document.getElementById('etiketBulutu');
-        const tumEtiketler = [];
-        linkler.forEach(l => { if(l.etiketler) l.etiketler.split(',').forEach(e => tumEtiketler.push(e.trim().toLowerCase())); });
-        const benzersiz = [...new Set(tumEtiketler)];
-        bulut.innerHTML = '<button onclick="linkleriGetir()" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black">HEPSİ</button>';
-        benzersiz.forEach(e => { if(e) bulut.innerHTML += `<button onclick="linkleriGetir('${e}')" class="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold">#${e.toUpperCase()}</button>`; });
-    }
+    async function verileriYukle(filtre = "HEPSİ") {
+        aktifListe = filtre;
+        const [lRes, sRes] = await Promise.all([
+            fetch(`${API_URL}/linkler`),
+            fetch(`${API_URL}/listeler`)
+        ]);
+        const linkler = await lRes.json();
+        const listeler = await sRes.json();
 
-    function aramaYap() {
-        const aranan = document.getElementById('aramaKutusu').value.toLowerCase();
-        document.querySelectorAll('#liste > div').forEach(k => {
-            k.style.display = k.innerText.toLowerCase().includes(aranan) ? "flex" : "none";
+        // Sekmeleri Çiz
+        const sekmeler = document.getElementById('listeSekmeleri');
+        sekmeler.innerHTML = `<button onclick="verileriYukle('HEPSİ')" class="px-4 py-2 rounded-full text-xs font-bold ${aktifListe==='HEPSİ'?'bg-indigo-600 text-white':'bg-white text-slate-600'} shadow">HEPSİ</button>`;
+        listeler.forEach(l => {
+            sekmeler.innerHTML += `<button onclick="verileriYukle('${l}')" class="px-4 py-2 rounded-full text-xs font-bold ${aktifListe===l?'bg-indigo-600 text-white':'bg-white text-slate-600'} shadow">${l.toUpperCase()}</button>`;
+        });
+
+        // Linkleri Çiz
+        const listeAlan = document.getElementById('liste');
+        listeAlan.innerHTML = '';
+        
+        linkler.forEach((veri, index) => {
+            if(aktifListe !== "HEPSİ" && (!veri.listeler || !veri.listeler.includes(aktifListe))) return;
+
+            const kart = `
+                <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-lg overflow-hidden border border-slate-100 dark:border-slate-700 flex flex-col h-full group">
+                    <img src="${veri.resim || 'https://via.placeholder.com/400x200'}" class="w-full h-40 object-cover">
+                    <div class="p-5 flex flex-col flex-1">
+                        <h3 class="font-bold text-sm mb-2 line-clamp-2">${veri.baslik}</h3>
+                        <div class="flex flex-wrap gap-1 mb-4">
+                            ${veri.listeler ? veri.listeler.map(l => `<span class="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-md font-bold">${l}</span>`).join('') : ''}
+                        </div>
+                        <div class="mt-auto flex gap-2">
+                            <button onclick="window.open('${veri.link}', '_blank')" class="flex-1 bg-indigo-600 text-white py-2 rounded-xl text-xs font-bold">GİT</button>
+                            <button onclick="listeyeEkle(${index})" class="bg-slate-100 dark:bg-slate-700 p-2 rounded-xl text-xs hover:bg-indigo-100 transition-all">📂 Listeme Ekle</button>
+                            <button onclick="sil(${index})" class="text-red-500 p-2">🗑️</button>
+                        </div>
+                    </div>
+                </div>`;
+            listeAlan.insertAdjacentHTML('afterbegin', kart);
         });
     }
 
-    async function linkSil(index) {
-        if(!confirm("Silinsin mi?")) return;
-        await fetch(`${API_URL}/sil/${index}`, { method: 'DELETE' });
-        await linkleriGetir();
+    async function sil(index) {
+        if(confirm("Silinsin mi?")) {
+            await fetch(`${API_URL}/sil/${index}`, { method: 'DELETE' });
+            verileriYukle();
+        }
     }
 
-    function temaDegistir() {
-        const html = document.documentElement;
-        html.classList.toggle('dark');
-        document.getElementById('temaIkon').innerText = html.classList.contains('dark') ? '☀️' : '🌙';
-    }
-
-    window.onload = linkleriGetir;
+    window.onload = () => verileriYukle();
 </script>
 </body>
 </html>

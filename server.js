@@ -13,17 +13,17 @@ let db = {
         username: "royal",
         joinDate: "02.01.2026",
         bio: "Link koleksiyoncusu ve teknoloji meraklısı.",
-        stats: { likes: 0, saved: 0 }
+        followers: 128,
+        following: 45
     },
     links: [],
     listeler: [
-        { ad: "Favoriler", etiketler: "özel, seçilmiş", likes: 0, savedBy: 0, public: true },
-        { ad: "Okunacaklar", etiketler: "eğitim", likes: 0, savedBy: 0, public: true },
-        { ad: "Teknoloji", etiketler: "tech, yazılım", likes: 0, savedBy: 0, public: true }
+        { id: 1, ad: "Favoriler", etiketler: "seçilmiş", likes: 12, savedBy: 4, creator: "royal" },
+        { id: 2, ad: "Okunacaklar", etiketler: "eğitim", likes: 8, savedBy: 2, creator: "royal" }
     ]
 };
 
-// ANALİZ
+// ANALİZ VE KAYIT
 app.post('/on-analiz', async (req, res) => {
     try {
         const response = await axios.get(req.body.url, { timeout: 3000 });
@@ -37,38 +37,32 @@ app.post('/on-analiz', async (req, res) => {
     }
 });
 
-// BAĞLANTI EKLE
 app.post('/kaydet', (req, res) => {
     const { url, baslik, etiketler, secilenListeler, yeniListeAdi, resim } = req.body;
-    let finalLists = [...secilenListeler];
+    let finalLists = Array.isArray(secilenListeler) ? [...secilenListeler] : [];
     
-    if (yeniListeAdi && yeniListeAdi.trim() !== "") {
+    if (yeniListeAdi) {
         const tAd = yeniListeAdi.trim();
-        if (!db.listeler.find(l => l.ad === tAd)) db.listeler.push({ ad: tAd, etiketler: "", likes: 0, savedBy: 0, public: true });
+        if (!db.listeler.find(l => l.ad === tAd)) {
+            db.listeler.push({ id: Date.now(), ad: tAd, etiketler: "", likes: 0, savedBy: 0, creator: "royal" });
+        }
         finalLists.push(tAd);
     }
 
-    const yeniLink = {
-        id: Date.now(),
-        url, baslik, etiketler, resim,
-        listeler: finalLists,
-        creator: "royal",
-        likes: 0,
-        views: 0,
-        date: new Date().toLocaleDateString()
-    };
-    db.links.push(yeniLink);
+    db.links.push({
+        id: Date.now(), url, baslik, etiketler, resim,
+        listeler: finalLists, creator: "royal", likes: 0, date: new Date().toLocaleDateString()
+    });
     res.json({ success: true });
 });
 
 app.get('/data', (req, res) => res.json(db));
 
-// BEĞENİ VE ETKİLEŞİM
-app.post('/like/:id', (req, res) => {
+app.post('/like-link/:id', (req, res) => {
     const link = db.links.find(l => l.id == req.params.id);
     if(link) link.likes++;
     res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`LinkUp Server 2.0 running on ${PORT}`));
+app.listen(PORT, () => console.log(`LinkUp Server 3.0 Active`));

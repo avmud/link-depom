@@ -7,58 +7,47 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// GELİŞMİŞ VERİ YAPISI
 let db = {
-    users: {
-        "royal": {
-            username: "royal",
-            joinDate: "02.01.2026",
-            bio: "Link koleksiyoncusu ve teknoloji meraklısı.",
-            lists: ["Favoriler"]
-        }
-    },
+    users: { "royal": { username: "royal", joinDate: "02.01.2026", bio: "Link koleksiyoncusu." } },
     links: [],
-    lists: [
-        { id: 1, ad: "Favoriler", creator: "royal", public: true, likes: 0, views: 0, savedBy: 0, items: [] }
-    ]
+    listeler: ["Favoriler", "Okunacaklar", "Teknoloji"]
 };
 
-// 1. LİNK ANALİZ VE EKLEME
-app.post('/analiz', async (req, res) => {
-    const { linkUrl, etiketler, creator = "royal", isPublic = true } = req.body;
+// ANALİZ: Sadece resim ve öneri başlık çekmek için
+app.post('/on-analiz', async (req, res) => {
     try {
-        const response = await axios.get(linkUrl, { timeout: 3000 });
+        const response = await axios.get(req.body.url, { timeout: 3000 });
         const $ = cheerio.load(response.data);
-        const baslik = $('title').text().trim() || linkUrl;
-        const resim = $('meta[property="og:image"]').attr('content') || "https://images.unsplash.com/photo-1594322436404-5a0526db4d13?w=500";
-        
-        const yeniLink = { 
-            id: Date.now(),
-            baslik, link: linkUrl, resim, etiketler, 
-            creator, public: isPublic, tiklama: 0, likes: 0, date: new Date().toLocaleString()
-        };
-        db.links.push(yeniLink);
-        res.json(yeniLink);
+        const baslik = $('title').text().trim();
+        const resim = $('meta[property="og:image"]').attr('content') || "https://images.unsplash.com/photo-1614332287897-cdc485fa562d?w=500";
+        res.json({ baslik, resim });
     } catch (e) {
-        const hataLink = { id: Date.now(), baslik: linkUrl, link: linkUrl, resim: "https://images.unsplash.com/photo-1594322436404-5a0526db4d13?w=500", etiketler, creator, public: isPublic, tiklama: 0, likes: 0, date: new Date().toLocaleString() };
-        db.links.push(hataLink);
-        res.json(hataLink);
+        res.json({ baslik: "", resim: "https://images.unsplash.com/photo-1614332287897-cdc485fa562d?w=500" });
     }
 });
 
-// 2. TÜM VERİLERİ GETİR (Home & Search)
+// TAM KAYIT
+app.post('/kaydet', (req, res) => {
+    const { url, baslik, etiketler, secilenListe } = req.body;
+    const yeniLink = {
+        id: Date.now(),
+        url, baslik, etiketler,
+        liste: secilenListe || "Genel",
+        resim: req.body.resim || "https://images.unsplash.com/photo-1614332287897-cdc485fa562d?w=500",
+        creator: "royal",
+        date: new Date().toLocaleString()
+    };
+    db.links.push(yeniLink);
+    res.json({ success: true, yeniLink });
+});
+
 app.get('/data', (req, res) => {
     res.json({
-        sonLinkler: db.links.filter(l => l.public).slice(-10).reverse(),
-        populerListeler: db.lists.filter(l => l.public),
-        user: db.users["royal"]
+        sonLinkler: db.links.slice(-10).reverse(),
+        listeler: db.listeler,
+        linkler: db.links
     });
 });
 
-app.delete('/sil/:id', (req, res) => {
-    db.links = db.links.filter(l => l.id != req.params.id);
-    res.json({ success: true });
-});
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`LinkUp Engine Aktif: ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));

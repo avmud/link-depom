@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
-        .card:hover { transform: translateY(-8px); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card:hover { transform: translateY(-8px); transition: 0.4s; }
         body { transition: background-color 0.3s, color 0.3s; }
     </style>
 </head>
@@ -16,10 +16,10 @@
     <div class="max-w-5xl mx-auto">
         <header class="text-center mb-12 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-indigo-500/50">L</div>
-                <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Link<span class="text-indigo-600">Up</span></h1>
+                <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-2xl">L</div>
+                <h1 class="text-3xl font-black tracking-tight">Link<span class="text-indigo-600">Up</span></h1>
             </div>
-            <button onclick="temaDegistir()" class="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-110 transition-transform">
+            <button onclick="temaDegistir()" class="p-3 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
                 <span id="temaIkon" class="text-xl">🌙</span>
             </button>
         </header>
@@ -38,5 +38,86 @@
             </div>
         </div>
 
-        <div class="mb-10 space-y-6">
-            <input type="text" id="aramaKutusu"
+        <div id="liste" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-24"></div>
+
+        <footer class="mt-20 pt-12 border-t border-slate-200 dark:border-slate-800 text-center text-slate-500 pb-12">
+            <div class="flex justify-center gap-8 mb-6 font-semibold">
+                <button onclick="modalAc('about')" class="hover:text-indigo-600">Hakkımızda</button>
+                <button onclick="modalAc('privacy')" class="hover:text-indigo-600">Gizlilik</button>
+            </div>
+            <p class="text-xs font-bold">&copy; 2026 LinkUp</p>
+        </footer>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+        <div class="bg-white dark:bg-slate-800 p-10 rounded-[2.5rem] max-w-2xl w-full relative border border-slate-100 dark:border-slate-700 shadow-2xl">
+            <button onclick="modalKapat()" class="absolute top-6 right-6 text-3xl font-light">✕</button>
+            <div id="modalIcerik"></div>
+        </div>
+    </div>
+
+<script>
+    const API_URL = "https://link-depom-sunucu.onrender.com";
+
+    function temaDegistir() {
+        const html = document.documentElement;
+        const ikon = document.getElementById('temaIkon');
+        if (html.classList.contains('dark')) {
+            html.classList.remove('dark'); ikon.innerText = '🌙';
+        } else {
+            html.classList.add('dark'); ikon.innerText = '☀️';
+        }
+    }
+
+    // Bu fonksiyonun burada olduğundan emin olun
+    async function linkAnalizEt() {
+        console.log("Butona basıldı, analiz başlıyor...");
+        const lInput = document.getElementById('linkInput');
+        const tInput = document.getElementById('tagInput');
+        const btn = document.getElementById('ekleButon');
+
+        if(!lInput.value.trim().startsWith('http')) {
+            alert("Lütfen geçerli bir link girin!");
+            return;
+        }
+
+        btn.innerText = "İŞLENİYOR...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(`${API_URL}/analiz`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ linkUrl: lInput.value, etiketler: tInput.value })
+            });
+            
+            if(response.ok) {
+                lInput.value = ''; 
+                tInput.value = '';
+                await linkleriGetir();
+            } else {
+                alert("Sunucu bir hata verdi.");
+            }
+        } catch (e) { 
+            console.error("Hata:", e);
+            alert("Sunucuya bağlanılamadı. Render uyanıyor olabilir, lütfen 10 saniye sonra tekrar deneyin."); 
+        } finally {
+            btn.innerText = "BAĞLANTIYI KAYDET";
+            btn.disabled = false;
+        }
+    }
+
+    async function linkleriGetir() {
+        try {
+            const res = await fetch(`${API_URL}/linkler`);
+            const linkler = await res.json();
+            const liste = document.getElementById('liste');
+            liste.innerHTML = ''; 
+            linkler.forEach((veri, index) => {
+                const kart = `
+                <div class="card bg-white dark:bg-slate-800 rounded-[2rem] shadow-xl overflow-hidden border border-slate-100 dark:border-slate-700 relative flex flex-col h-full">
+                    <button onclick="linkSil(${index})" class="absolute top-4 right-4 bg-white/90 text-red-500 p-2 rounded-xl z-10">🗑️</button>
+                    <img src="${veri.resim || 'https://via.placeholder.com/400x200'}" class="w-full h-40 object-cover">
+                    <div class="p-6 flex flex-col flex-1">
+                        <h3 class="text-base font-bold mb-3 line-clamp-2">${veri.baslik}</h3>
+                        <button onclick="window.open('${veri.link}', '_blank')" class="mt-auto w-full py-4 bg-

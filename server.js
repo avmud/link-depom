@@ -7,9 +7,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// GELİŞMİŞ VERİ TABANI
 let db = {
+    user: {
+        username: "royal",
+        joinDate: "02.01.2026",
+        bio: "Link koleksiyoncusu ve teknoloji meraklısı.",
+        stats: { likes: 0, saved: 0 }
+    },
     links: [],
-    listeler: ["Favoriler", "Okunacaklar", "Teknoloji"]
+    listeler: [
+        { ad: "Favoriler", etiketler: "özel, seçilmiş", likes: 0, savedBy: 0, public: true },
+        { ad: "Okunacaklar", etiketler: "eğitim", likes: 0, savedBy: 0, public: true },
+        { ad: "Teknoloji", etiketler: "tech, yazılım", likes: 0, savedBy: 0, public: true }
+    ]
 };
 
 // ANALİZ
@@ -26,46 +37,38 @@ app.post('/on-analiz', async (req, res) => {
     }
 });
 
-// KAYIT (Çoklu Liste Desteği ile)
+// BAĞLANTI EKLE
 app.post('/kaydet', (req, res) => {
-    const { url, baslik, etiketler, secilenListeler, yeniListeAdi } = req.body;
+    const { url, baslik, etiketler, secilenListeler, yeniListeAdi, resim } = req.body;
+    let finalLists = [...secilenListeler];
     
-    let finalListeler = [...secilenListeler];
-    
-    // Eğer yeni bir liste adı girilmişse listelere ekle
     if (yeniListeAdi && yeniListeAdi.trim() !== "") {
-        const temizAd = yeniListeAdi.trim();
-        if (!db.listeler.includes(temizAd)) db.listeler.push(temizAd);
-        if (!finalListeler.includes(temizAd)) finalListeler.push(temizAd);
+        const tAd = yeniListeAdi.trim();
+        if (!db.listeler.find(l => l.ad === tAd)) db.listeler.push({ ad: tAd, etiketler: "", likes: 0, savedBy: 0, public: true });
+        finalLists.push(tAd);
     }
 
     const yeniLink = {
         id: Date.now(),
-        url, baslik, etiketler,
-        listeler: finalListeler.length > 0 ? finalListeler : ["Genel"],
-        resim: req.body.resim,
-        date: new Date().toLocaleString()
+        url, baslik, etiketler, resim,
+        listeler: finalLists,
+        creator: "royal",
+        likes: 0,
+        views: 0,
+        date: new Date().toLocaleDateString()
     };
-    
     db.links.push(yeniLink);
     res.json({ success: true });
 });
 
-// LİSTE OLUŞTURMA
-app.post('/liste-olustur', (req, res) => {
-    const { ad } = req.body;
-    if (ad && !db.listeler.includes(ad)) {
-        db.listeler.push(ad);
-        res.json({ success: true });
-    } else res.status(400).send("Hata");
-});
-
 app.get('/data', (req, res) => res.json(db));
 
-app.delete('/sil/:id', (req, res) => {
-    db.links = db.links.filter(l => l.id != req.params.id);
+// BEĞENİ VE ETKİLEŞİM
+app.post('/like/:id', (req, res) => {
+    const link = db.links.find(l => l.id == req.params.id);
+    if(link) link.likes++;
     res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT, () => console.log(`LinkUp Server 2.0 running on ${PORT}`));

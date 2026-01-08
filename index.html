@@ -3,213 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp | Profesyonel Sosyal Arşiv</title>
+    <title>LinkUp | Sosyal Arşiviniz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .nav-active { background: #4f46e5; color: white !important; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4); }
-        .link-strip { transition: all 0.2s ease; border-left: 4px solid transparent; }
-        .link-strip:hover { border-left-color: #4f46e5; background: #f1f5f9; transform: translateX(5px); }
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .folder-item { cursor: pointer; transition: all 0.2s; border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; }
+        .folder-item:hover { background: #f1f5f9; color: #4f46e5; }
+        .sub-folder { margin-left: 20px; border-left: 2px solid #e2e8f0; }
+        .action-card { background: white; border-radius: 24px; padding: 24px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .input-box { width: 100%; padding: 12px 16px; background: #f8fafc; border-radius: 12px; outline: none; border: 1px solid #e2e8f0; font-size: 13px; }
+        .input-box:focus { border-color: #4f46e5; background: white; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 font-sans text-xs">
+<body class="bg-[#FDFDFD] text-slate-800 font-sans">
 
     <div class="flex h-screen overflow-hidden">
         
-        <aside class="w-64 border-r border-slate-200 p-6 flex flex-col bg-white">
-            <h1 class="text-3xl font-black text-indigo-600 mb-10 tracking-tighter cursor-pointer" onclick="renderView('ana')">LinkUp</h1>
+        <aside class="w-64 border-r border-slate-200 bg-white flex flex-col p-6 overflow-y-auto">
+            <h1 class="text-2xl font-black text-indigo-600 mb-8 tracking-tighter italic">LinkUp</h1>
             
-            <nav class="space-y-1 flex-1 overflow-y-auto custom-scroll">
-                <p class="text-[10px] font-bold text-slate-400 mb-4 uppercase tracking-widest">Menü</p>
-                <button onclick="renderView('ana')" id="nav-ana" class="w-full text-left p-3 rounded-xl font-bold flex items-center gap-3">🏠 Keşfet</button>
-                <button onclick="renderView('unlisted')" id="nav-unlisted" class="w-full text-left p-3 rounded-xl font-bold flex items-center gap-3">📑 Listelenmemişler</button>
-                
-                <p class="text-[10px] font-bold text-slate-400 mt-8 mb-4 uppercase tracking-widest">Listelerim</p>
-                <div id="solListeler" class="space-y-1"></div>
+            <nav class="flex-1 space-y-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Tüm Kısayollarım</p>
+                    <div id="treeView" class="space-y-1">
+                        </div>
+                </div>
+                <button class="w-full mt-4 p-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-xs hover:border-indigo-500 hover:text-indigo-600">
+                    + Yeni Liste Oluştur
+                </button>
             </nav>
-
-            <button onclick="modalAc()" class="mt-6 bg-indigo-600 text-white p-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all">BAĞLANTI EKLE</button>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-8 relative custom-scroll">
-            <div class="flex justify-between items-center mb-10">
-                <div class="flex-1 max-w-xl">
-                    <input type="text" placeholder="Arşivinde ara..." class="w-full p-4 bg-white rounded-2xl border-none shadow-sm focus:ring-2 ring-indigo-500 outline-none transition-all">
+        <main class="flex-1 flex flex-col overflow-hidden">
+            
+            <header class="h-20 bg-white border-b border-slate-100 px-8 flex justify-between items-center shrink-0">
+                <div class="flex-1 max-w-md">
+                    <input type="text" placeholder="Kısayol, liste veya kişi ara..." class="w-full p-3 bg-slate-50 rounded-full outline-none text-xs border border-transparent focus:border-indigo-500">
                 </div>
-                <button onclick="renderView('profil')" class="flex items-center gap-3 p-1 pr-5 bg-white rounded-full shadow-sm hover:shadow-md transition-all ml-6">
-                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black">R</div>
-                    <span class="font-bold">Profilim</span>
-                </button>
-            </div>
+                <div class="flex items-center gap-6">
+                    <div class="flex gap-4 font-bold text-[10px] uppercase text-slate-500">
+                        <button class="hover:text-indigo-600">Bildirimler</button>
+                        <button class="hover:text-indigo-600">İletiler</button>
+                    </div>
+                    <button onclick="renderView('profil')" class="bg-indigo-600 text-white px-6 py-2 rounded-full font-bold text-xs shadow-lg shadow-indigo-100">Profilim</button>
+                </div>
+            </header>
 
-            <div id="dynamicContent">
-                <h2 id="viewTitle" class="text-4xl font-black mb-8 tracking-tight">Keşfet</h2>
-                <div id="linkContainer" class="space-y-3"></div>
+            <div id="mainContent" class="flex-1 overflow-y-auto p-8 space-y-6">
+                
+                <div class="w-full h-24 bg-slate-100 rounded-3xl flex items-center justify-center border-2 border-dashed border-slate-200 text-slate-400 text-xs italic">
+                    AdSense Reklam Alanı
+                </div>
+
+                <div id="addSection" class="action-card max-w-3xl mx-auto space-y-4">
+                    <h2 class="text-lg font-black italic">Yeni bir bağlantı keşfettin mi?</h2>
+                    <input id="urlIn" placeholder="Kısayolu buraya yapıştır..." class="input-box text-base py-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input id="titleIn" placeholder="Başlık yaz" class="input-box">
+                        <input id="tagIn" placeholder="Etiket ekle" class="input-box">
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <select id="listSelect" multiple class="flex-1 p-3 bg-slate-50 rounded-xl outline-none text-xs h-12 border border-slate-200">
+                            </select>
+                        <button onclick="kaydet()" class="bg-indigo-600 text-white px-10 py-4 rounded-xl font-black shadow-xl">EKLE</button>
+                    </div>
+                </div>
+
+                <div id="fixedButtons" class="grid grid-cols-3 gap-4 max-w-3xl mx-auto">
+                    <button class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm font-bold text-xs hover:bg-indigo-50">En Çok Kaydedilenler</button>
+                    <button class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm font-bold text-xs hover:bg-indigo-50">Size Özel</button>
+                    <button class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm font-bold text-xs hover:bg-indigo-50">Takip Ettiklerin</button>
+                </div>
+
+                <div id="linkFeed" class="space-y-3 max-w-4xl mx-auto"></div>
             </div>
         </main>
-
-        <aside class="w-80 border-l border-slate-200 p-6 hidden xl:flex flex-col bg-slate-50/50">
-            <h3 class="font-black text-xs text-slate-400 mb-6 uppercase tracking-widest">Son Etkinlik</h3>
-            <div id="sagAkis" class="space-y-4 overflow-y-auto custom-scroll"></div>
-        </aside>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl">
-            <h3 class="text-2xl font-black mb-6">Yeni Bağlantı</h3>
-            <div class="space-y-4">
-                <input id="urlInput" onblur="analiz()" type="text" placeholder="https://..." class="w-full p-5 bg-slate-100 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500">
-                <input id="baslikInput" type="text" placeholder="Başlık Yazın" class="w-full p-5 bg-slate-100 rounded-2xl outline-none">
-                <input id="etiketInput" type="text" placeholder="Etiketler (virgülle ayırın)" class="w-full p-5 bg-slate-100 rounded-2xl outline-none">
-                <p class="font-black text-slate-400 mt-4 text-[10px] uppercase">Listeye Ekle</p>
-                <div id="modalListeler" class="max-h-40 overflow-y-auto space-y-2 p-2 bg-slate-50 rounded-2xl custom-scroll"></div>
-                <input id="yeniListeInput" type="text" placeholder="+ Yeni bir liste adı..." class="w-full p-4 border-t bg-transparent outline-none font-bold text-indigo-600">
-                <div class="flex gap-4 mt-8">
-                    <button onclick="modalKapat()" class="flex-1 p-5 rounded-2xl font-bold text-slate-400">İPTAL</button>
-                    <button onclick="kaydet()" class="flex-[2] p-5 bg-indigo-600 text-white rounded-2xl font-black shadow-xl">EKLE</button>
-                </div>
+    <div id="reportModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl">
+            <h4 class="text-xl font-black mb-4">Sorun Bildir</h4>
+            <select id="reportReason" onchange="toggleOther(this.value)" class="w-full p-4 bg-slate-50 rounded-xl mb-4 font-bold outline-none">
+                <option value="müstehcenlik">Müstehcenlik</option>
+                <option value="yasadışılık">Yasadışılık</option>
+                <option value="reklam">Reklam</option>
+                <option value="tık_tuzağı">Tık Tuzağı</option>
+                <option value="diğer">Diğer</option>
+            </select>
+            <textarea id="otherReason" maxlength="240" placeholder="Nedeni belirtin..." class="hidden w-full p-4 bg-slate-50 rounded-xl h-32 mb-4 outline-none"></textarea>
+            <div class="flex gap-4">
+                <button onclick="closeReport()" class="flex-1 p-4 font-bold text-slate-400">İPTAL</button>
+                <button class="flex-1 p-4 bg-red-500 text-white rounded-xl font-bold">GÖNDER</button>
             </div>
-        </div>
-    </div>
-
-    <div id="quickAddModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl">
-            <h3 class="text-xl font-black mb-4">Listeleri Güncelle</h3>
-            <div id="quickListOptions" class="space-y-2 mb-6 max-h-48 overflow-y-auto custom-scroll p-2 bg-slate-50 rounded-xl"></div>
-            <button onclick="quickUpdateSave()" class="w-full p-4 bg-indigo-600 text-white rounded-xl font-black">GÜNCELLE</button>
-            <button onclick="document.getElementById('quickAddModal').classList.add('hidden')" class="w-full mt-2 p-4 text-slate-400 font-bold">KAPAT</button>
         </div>
     </div>
 
 <script>
     const API_URL = "https://link-depom-sunucu.onrender.com";
     let currentMode = "ana";
-    let tempResim = "";
-    let activeQuickLinkId = null;
 
     async function verileriGetir() {
         const res = await fetch(`${API_URL}/data`);
         const db = await res.json();
-
-        // Sağ Panel
-        document.getElementById('sagAkis').innerHTML = db.links.slice(-6).reverse().map(l => `
-            <div class="flex gap-3 p-3 bg-white rounded-2xl shadow-sm border border-slate-100 cursor-pointer">
-                <img src="${l.resim}" class="w-10 h-10 rounded-xl object-cover">
-                <div class="overflow-hidden"><h4 class="font-bold truncate text-[10px]">${l.baslik}</h4><p class="text-[9px] text-indigo-500">@${l.creator}</p></div>
+        
+        // Sol Menü Klasörleme (Recursive)
+        const treeHtml = db.listeler.filter(l => !l.parent).map(parent => `
+            <div class="folder-group">
+                <div class="folder-item">📂 ${parent.ad}</div>
+                <div class="sub-folder">
+                    ${db.listeler.filter(l => l.parent === parent.ad).map(sub => `<div class="folder-item">📑 ${sub.ad}</div>`).join('')}
+                </div>
             </div>
         `).join('');
+        document.getElementById('treeView').innerHTML = treeHtml;
 
-        // Sol Nav
-        document.getElementById('solListeler').innerHTML = db.listeler.map(l => `
-            <button onclick="renderView('list-${l.ad}')" id="nav-list-${l.ad}" class="w-full text-left p-3 rounded-xl font-bold hover:bg-slate-100 flex justify-between items-center group">
-                <span>📂 ${l.ad}</span>
-            </button>
-        `).join('');
+        // Select kutusu
+        document.getElementById('listSelect').innerHTML = db.listeler.map(l => `<option value="${l.ad}">${l.ad}</option>`).join('');
 
-        // Modal Listeler
-        const listHtml = db.listeler.map(l => `
-            <label class="flex items-center gap-3 p-2 hover:bg-white rounded-xl cursor-pointer">
-                <input type="checkbox" value="${l.ad}" class="l-check w-4 h-4 accent-indigo-600">
-                <span class="font-bold text-xs">${l.ad}</span>
-            </label>
-        `).join('');
-        document.getElementById('modalListeler').innerHTML = listHtml;
-        document.getElementById('quickListOptions').innerHTML = listHtml.replace(/class="l-check/g, 'class="q-check');
-
-        updateMain(db);
+        renderMain(db);
     }
 
-    function updateMain(db) {
-        const container = document.getElementById('linkContainer');
-        const title = document.getElementById('viewTitle');
-        container.innerHTML = "";
-
-        if(currentMode === 'profil') {
-            title.innerText = "Profilim";
-            container.innerHTML = `<div class="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100 mb-10">
-                <div class="flex items-center gap-8">
-                    <div class="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-4xl text-white font-black">R</div>
-                    <div><h3 class="text-3xl font-black">${db.user.username}</h3><p class="text-slate-500 mb-2">${db.user.bio}</p>
-                    <div class="flex gap-4 font-bold text-[9px] text-indigo-600 uppercase"><span>👥 ${db.user.followers} Takipçi</span><span>📅 ${db.user.joinDate}</span></div></div>
-                </div>
-            </div>`;
+    function renderMain(db) {
+        const feed = document.getElementById('linkFeed');
+        const content = document.getElementById('mainContent');
+        
+        if (currentMode === 'profil') {
+            document.getElementById('addSection').classList.add('hidden');
+            document.getElementById('fixedButtons').classList.add('hidden');
+            const s = db.user.stats;
+            feed.innerHTML = `
+                <div class="bg-white p-12 rounded-[3rem] shadow-xl border border-slate-100 space-y-8">
+                    <h2 class="text-3xl font-black">Merhaba "${db.user.username}"</h2>
+                    <div class="grid grid-cols-2 gap-8 text-sm font-medium">
+                        <div class="space-y-2">
+                            <p>Toplam listen: <span class="font-black text-indigo-600">${s.totalLists}</span></p>
+                            <p>Toplam kısayolun: <span class="font-black text-indigo-600">${s.totalLinks}</span></p>
+                            <p>Kaydettiğin liste: <span class="font-black text-indigo-600">${s.savedLists}</span></p>
+                            <p>Kaydettiğin kısayol: <span class="font-black text-indigo-600">${s.savedLinks}</span></p>
+                        </div>
+                        <div class="space-y-2">
+                            <p>Takipçi Sayın: <span class="font-black text-indigo-600">${s.followers}</span></p>
+                            <p>Listelerin <span class="font-black text-indigo-600">${s.listLikes}</span> kez kaydedildi.</p>
+                            <p>Kısayolların <span class="font-black text-indigo-600">${s.linkLikes}</span> kez kaydedildi.</p>
+                            <p>Kısayolların <span class="font-black text-indigo-600">${s.linkLikes}</span> kez beğenildi.</p>
+                        </div>
+                    </div>
+                </div>`;
             return;
         }
 
-        let links = [];
-        if(currentMode === 'ana') { title.innerText = "Keşfet"; links = db.links; }
-        else if(currentMode === 'unlisted') { title.innerText = "Listelenmemişler"; links = db.links.filter(l => !l.listeler || l.listeler.length === 0); }
-        else if(currentMode.startsWith('list-')) { 
-            const n = currentMode.replace('list-', ''); title.innerText = `📂 ${n}`; 
-            links = db.links.filter(l => l.listeler && l.listeler.includes(n)); 
-        }
-
-        container.innerHTML = links.reverse().map(l => `
-            <div class="link-strip bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-5">
-                <img src="${l.resim}" class="w-14 h-14 rounded-xl object-cover">
+        feed.innerHTML = db.links.reverse().map(l => `
+            <div class="bg-white p-4 rounded-2xl flex items-center gap-4 border border-slate-100 group relative">
+                <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-xl">🔗</div>
                 <div class="flex-1">
-                    <h4 class="font-black text-sm text-slate-800">${l.baslik}</h4>
-                    <div class="flex gap-2 mt-1">
-                        ${l.listeler.map(lst => `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[8px] font-bold uppercase">${lst}</span>`).join('')}
-                    </div>
+                    <h4 class="font-bold text-sm">${l.baslik}</h4>
+                    <p class="text-[10px] text-slate-400">@${l.creator} tarafından eklendi</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="openQuickAdd(${l.id})" class="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold hover:bg-indigo-100 transition-all">LİSTEYE EKLE</button>
-                    <button onclick="window.open('${l.url}', '_blank')" class="px-4 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-indigo-600 transition-all flex items-center gap-2">GİT ↗</button>
-                    <button onclick="likeLink(${l.id})" class="px-4 py-2 bg-pink-50 text-pink-500 rounded-xl font-bold">❤️ ${l.likes || 0}</button>
+                    <button onclick="window.open('${l.url}')" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold">GİT</button>
+                    <button onclick="openReport()" class="p-2 text-red-300 hover:text-red-500 text-lg">⚠️</button>
                 </div>
             </div>
         `).join('');
-    }
-
-    function openQuickAdd(id) {
-        activeQuickLinkId = id;
-        document.getElementById('quickAddModal').classList.remove('hidden');
-    }
-
-    async function quickUpdateSave() {
-        const selected = Array.from(document.querySelectorAll('.q-check:checked')).map(c => c.value);
-        // Bu özellik için backend'de link güncelleme rotası gerekir, basitlik için mevcut mantığı kullanıyoruz.
-        // Şimdilik sadece görsel geri bildirim ve kayıt mantığı:
-        alert("Listeler Güncellendi!");
-        document.getElementById('quickAddModal').classList.add('hidden');
-        verileriGetir();
-    }
-
-    async function analiz() {
-        const u = document.getElementById('urlInput').value;
-        if(!u) return;
-        const res = await fetch(`${API_URL}/on-analiz`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url: u }) });
-        const d = await res.json();
-        document.getElementById('baslikInput').value = d.baslik;
-        tempResim = d.resim;
     }
 
     async function kaydet() {
         const payload = {
-            url: document.getElementById('urlInput').value,
-            baslik: document.getElementById('baslikInput').value,
-            etiketler: document.getElementById('etiketInput').value,
-            secilenListeler: Array.from(document.querySelectorAll('.l-check:checked')).map(c => c.value),
-            yeniListeAdi: document.getElementById('yeniListeInput').value,
-            resim: tempResim
+            url: document.getElementById('urlIn').value,
+            baslik: document.getElementById('titleIn').value,
+            secilenListeler: Array.from(document.getElementById('listSelect').selectedOptions).map(o => o.value),
+            creator: "royal"
         };
-        await fetch(`${API_URL}/kaydet`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-        modalKapat(); verileriGetir();
+        const res = await fetch(`${API_URL}/kaydet`, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+        if(res.status === 403) alert("GÜVENLİK İHLALİ: Hesabınız anonimleştirildi!");
+        verileriGetir();
     }
 
-    function renderView(mode) { 
-        currentMode = mode; verileriGetir();
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('nav-active'));
-        const b = document.getElementById('nav-' + mode) || document.getElementById('nav-list-' + mode);
-        if(b) b.classList.add('nav-active');
-    }
+    function renderView(mode) { currentMode = mode; verileriGetir(); }
+    function openReport() { document.getElementById('reportModal').classList.remove('hidden'); }
+    function closeReport() { document.getElementById('reportModal').classList.add('hidden'); }
+    function toggleOther(val) { document.getElementById('otherReason').classList.toggle('hidden', val !== 'diğer'); }
 
-    function modalAc() { document.getElementById('modal').classList.remove('hidden'); }
-    function modalKapat() { document.getElementById('modal').classList.add('hidden'); }
-
-    window.onload = () => renderView('ana');
+    window.onload = verileriGetir;
 </script>
 </body>
 </html>

@@ -7,7 +7,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// GELİŞMİŞ VERİ TABANI
 let db = {
     user: {
         username: "royal",
@@ -18,12 +17,13 @@ let db = {
     },
     links: [],
     listeler: [
-        { id: 1, ad: "Favoriler", etiketler: "seçilmiş", likes: 12, savedBy: 4, creator: "royal" },
-        { id: 2, ad: "Okunacaklar", etiketler: "eğitim", likes: 8, savedBy: 2, creator: "royal" }
+        { ad: "Favoriler", etiketler: "özel", likes: 12, savedBy: 4 },
+        { ad: "Okunacaklar", etiketler: "eğitim", likes: 8, savedBy: 2 },
+        { ad: "Teknoloji", etiketler: "tech", likes: 5, savedBy: 1 }
     ]
 };
 
-// ANALİZ VE KAYIT
+// OTOMATİK ANALİZ (Başlık ve Resim Çeker)
 app.post('/on-analiz', async (req, res) => {
     try {
         const response = await axios.get(req.body.url, { timeout: 3000 });
@@ -37,20 +37,22 @@ app.post('/on-analiz', async (req, res) => {
     }
 });
 
+// TAM KAYIT
 app.post('/kaydet', (req, res) => {
-    const { url, baslik, etiketler, secilenListeler, yeniListeAdi, resim } = req.body;
+    const { url, baslik, etiketler, secilenListeler, yeniListeAdi, resim, aciklama } = req.body;
     let finalLists = Array.isArray(secilenListeler) ? [...secilenListeler] : [];
     
     if (yeniListeAdi) {
         const tAd = yeniListeAdi.trim();
         if (!db.listeler.find(l => l.ad === tAd)) {
-            db.listeler.push({ id: Date.now(), ad: tAd, etiketler: "", likes: 0, savedBy: 0, creator: "royal" });
+            db.listeler.push({ ad: tAd, etiketler: "", likes: 0, savedBy: 0 });
         }
         finalLists.push(tAd);
     }
 
     db.links.push({
         id: Date.now(), url, baslik, etiketler, resim,
+        aciklama: aciklama || "Bu bağlantı için henüz bir açıklama girilmemiş.",
         listeler: finalLists, creator: "royal", likes: 0, date: new Date().toLocaleDateString()
     });
     res.json({ success: true });
@@ -58,11 +60,5 @@ app.post('/kaydet', (req, res) => {
 
 app.get('/data', (req, res) => res.json(db));
 
-app.post('/like-link/:id', (req, res) => {
-    const link = db.links.find(l => l.id == req.params.id);
-    if(link) link.likes++;
-    res.json({ success: true });
-});
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`LinkUp Server 3.0 Active`));
+app.listen(PORT, () => console.log(`LinkUp Engine Active on ${PORT}`));

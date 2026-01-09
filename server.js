@@ -63,11 +63,7 @@ app.get('/google2907470659972352.html', (req, res) => {
 
 // --- DOSYA SUNUMU ---
 // Statik dosyaları (HTML, CSS, JS) mevcut klasörden sun
-app.use(express.static(path.join(__dirname)));
-
-app.get('/google2907470659972352.html', (req, res) => {
-    res.sendFile('google2907470659972352.html', { root: __dirname });
-});
+app.use(express.static(__dirname));
 
 app.get('*', (req, res) => {
     res.sendFile('index.html', { root: __dirname });

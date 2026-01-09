@@ -3,121 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp | Dashboard</title>
+    <title>LinkUp | Sosyal Ağ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; transition: 0.3s; }
-        .stat-card { background: white; padding: 1.5rem; border-radius: 2rem; border: 1px solid #f1f5f9; }
-        .dark .stat-card { background: #0f172a; border-color: #1e293b; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
 
-    <div id="authArea" class="hidden min-h-screen flex items-center justify-center bg-indigo-600 p-6">
+    <div id="authArea" class="hidden min-h-screen flex items-center justify-center bg-indigo-600">
         <div class="bg-white dark:bg-slate-900 p-10 rounded-[3rem] w-full max-w-md shadow-2xl">
             <h2 class="text-4xl font-black italic text-indigo-600 mb-8 text-center">LinkUp</h2>
-            <div id="authBox" class="space-y-3">
-                <input id="authUsername" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none hidden">
-                <input id="authEmail" type="email" placeholder="E-posta" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none">
-                <input id="authPass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none">
-                <button onclick="authIslem()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">Giriş Yap</button>
-                <p onclick="authModDegistir()" class="text-center text-[10px] font-bold text-slate-400 cursor-pointer uppercase mt-4">Hesap Oluştur</p>
+            <div class="space-y-3">
+                <input id="authEmail" placeholder="E-posta" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none border-2 focus:border-indigo-500">
+                <input id="authPass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none border-2 focus:border-indigo-500">
+                <button onclick="authIslem()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">BAĞLAN</button>
             </div>
         </div>
     </div>
 
     <div id="mainArea" class="hidden min-h-screen flex flex-col lg:flex-row">
-        <aside class="w-full lg:w-72 bg-white dark:bg-slate-900 border-r dark:border-slate-800 p-6 flex flex-col">
-            <div class="flex items-center justify-between mb-10">
-                <h1 class="text-2xl font-black text-indigo-600 italic">LinkUp</h1>
-                <button onclick="temaDegistir()" class="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl" id="themeIcon">🌙</button>
+        <aside class="w-full lg:w-72 bg-white dark:bg-slate-900 border-r dark:border-slate-800 p-6">
+            <h1 class="text-2xl font-black text-indigo-600 mb-10 italic">LinkUp</h1>
+            <div class="mb-6">
+                <input id="searchIn" onkeyup="verileriGetir(this.value)" placeholder="Akıllı Arama..." class="w-full p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs outline-none focus:ring-2 ring-indigo-500">
             </div>
-            
-            <nav class="space-y-1 flex-1">
-                <div onclick="verileriGetir()" class="p-3 font-bold cursor-pointer hover:text-indigo-600 transition">🌍 Keşfet</div>
-                <div onclick="istatistikGoster()" class="p-3 font-bold cursor-pointer hover:text-indigo-600 transition">📊 İstatistiklerim</div>
+            <nav class="space-y-2">
+                <div onclick="verileriGetir()" class="p-3 font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition">🏠 Akış</div>
                 <div onclick="cikisYap()" class="p-3 font-bold text-red-400 cursor-pointer">🚪 Çıkış</div>
             </nav>
-            <button onclick="modalAc()" class="mt-6 bg-indigo-600 text-white p-4 rounded-2xl font-black">+ YENİ EKLE</button>
+            <button onclick="modalAc()" class="w-full mt-10 bg-indigo-600 text-white p-4 rounded-2xl font-black shadow-lg shadow-indigo-200 dark:shadow-none">+ PAYLAŞ</button>
         </aside>
 
-        <main class="flex-1 p-4 lg:p-10 overflow-y-auto">
+        <main class="flex-1 p-4 lg:p-10">
             <div id="contentArea" class="max-w-2xl mx-auto space-y-6"></div>
         </main>
     </div>
 
-    <script>
+<script>
     const API_URL = "https://link-depom-sunucu.onrender.com";
+    let myFollowing = JSON.parse(localStorage.getItem('following') || '[]');
 
-    async function istatistikGoster() {
-        const res = await fetch(`${API_URL}/user/stats`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const s = await res.json();
-        
-        document.getElementById('contentArea').innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="stat-card">
-                    <p class="text-slate-400 text-xs font-bold uppercase">Toplam Paylaşım</p>
-                    <h2 class="text-4xl font-black mt-2">${s.toplamPaylasim}</h2>
-                </div>
-                <div class="stat-card">
-                    <p class="text-slate-400 text-xs font-bold uppercase">Toplam Beğeni</p>
-                    <h2 class="text-4xl font-black mt-2">❤️ ${s.toplamBegeni}</h2>
-                </div>
-                <div class="stat-card md:col-span-2">
-                    <p class="text-slate-400 text-xs font-bold uppercase mb-4">Aktif Kategorilerin</p>
-                    <div class="flex flex-wrap gap-2">
-                        ${s.kategoriler.map(k => `<span class="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 px-4 py-2 rounded-xl font-bold text-sm">${k}</span>`).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    async function verileriGetir() {
-        const res = await fetch(`${API_URL}/data`);
+    async function verileriGetir(q = "") {
+        const res = await fetch(`${API_URL}/data?q=${q}`);
         const data = await res.json();
+        const myId = localStorage.getItem('userId');
+        
         document.getElementById('contentArea').innerHTML = data.links.map(l => `
             <div class="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
-                <div class="flex items-center gap-3 mb-4">
-                    <img src="${l.userAvatar}" class="w-8 h-8 rounded-xl">
-                    <span class="text-xs font-black">@${l.userName}</span>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <img src="${l.userAvatar}" class="w-8 h-8 rounded-xl">
+                        <span class="text-xs font-black">@${l.userName}</span>
+                    </div>
+                    ${l.userId !== myId ? `
+                        <button onclick="takipEt('${l.userId}')" class="text-[10px] font-black uppercase px-4 py-1.5 rounded-full border-2 ${myFollowing.includes(l.userId) ? 'border-slate-200 text-slate-400' : 'border-indigo-600 text-indigo-600'}">
+                            ${myFollowing.includes(l.userId) ? 'Takip Ediliyor' : 'Takip Et'}
+                        </button>
+                    ` : ''}
                 </div>
-                <h4 class="text-lg font-extrabold">${l.baslik}</h4>
-                <div class="flex items-center justify-between mt-4">
-                    <span class="text-[10px] bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full font-bold">#${l.kategori}</span>
-                    <button onclick="window.open('${l.url}')" class="bg-slate-900 dark:bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black italic">Linke Git</button>
+                <h4 class="text-lg font-extrabold leading-tight">${l.baslik}</h4>
+                <div class="flex gap-2 mt-3">
+                    ${l.etiketler.map(t => `<span class="text-[9px] font-bold text-indigo-400 uppercase">#${t}</span>`).join('')}
+                </div>
+                <div class="flex items-center justify-between mt-5 pt-4 border-t dark:border-slate-800">
+                    <span class="text-[10px] text-slate-400 font-bold uppercase">${new Date(l.tarih).toLocaleDateString()}</span>
+                    <button onclick="window.open('${l.url}')" class="bg-slate-900 dark:bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black italic">GİT ↗</button>
                 </div>
             </div>
         `).join('');
     }
 
-    // Auth ve Tema Fonksiyonları (v11 ile aynı)
+    async function takipEt(userId) {
+        const res = await fetch(`${API_URL}/user/follow/${userId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        if(data.success) {
+            myFollowing = data.following;
+            localStorage.setItem('following', JSON.stringify(myFollowing));
+            verileriGetir(document.getElementById('searchIn').value);
+        }
+    }
+
     async function authIslem() {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPass').value;
-        const res = await fetch(`${API_URL}/auth/${document.getElementById('authUsername').classList.contains('hidden') ? 'login' : 'register'}`, {
+        const res = await fetch(`${API_URL}/auth/login`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password, username: document.getElementById('authUsername').value })
+            body: JSON.stringify({ email, password })
         });
         const data = await res.json();
         if(data.token) {
             localStorage.setItem('token', data.token);
+            localStorage.setItem('userId', data.userId);
+            localStorage.setItem('username', data.username);
+            localStorage.setItem('following', JSON.stringify(data.following || []));
             location.reload();
         }
     }
 
-    function temaDegistir() {
-        const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    }
-
     window.onload = () => {
-        if(localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
         if(localStorage.getItem('token')) {
             document.getElementById('mainArea').classList.remove('hidden');
             verileriGetir();
@@ -127,8 +117,7 @@
     }
     
     function cikisYap() { localStorage.clear(); location.reload(); }
-    function authModDegistir() { document.getElementById('authUsername').classList.toggle('hidden'); }
-    function modalAc() { /* Modal HTML'i eklenebilir */ alert("Ekleme modülü aktif"); }
+    function modalAc() { alert("Paylaşım modülü aktif"); }
 </script>
 </body>
 </html>

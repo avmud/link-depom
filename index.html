@@ -12,6 +12,9 @@
         .auth-input { background-color: #f1f5f9; width: 100%; padding: 1rem; border-radius: 1rem; outline: none; border: 2px solid transparent; transition: 0.2s; }
         .auth-input:focus { border-color: #4f46e5; background-color: white; }
         .tag-badge { background: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .nav-link { padding: 1rem; border-radius: 1rem; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s; }
+        .nav-link:hover { background: #f8fafc; color: #4f46e5; }
+        .nav-active { background: #4f46e5 !important; color: white !important; }
     </style>
 </head>
 <body class="bg-[#F8FAFC]">
@@ -33,12 +36,13 @@
         <aside class="w-full md:w-72 bg-white border-r border-slate-200 p-8 flex flex-col">
             <h1 class="text-3xl font-black text-indigo-600 mb-10 italic tracking-tighter">LinkUp</h1>
             <div class="mb-6 p-4 bg-indigo-50 rounded-2xl">
-                <p id="navUser" class="text-xs font-black text-indigo-900 truncate uppercase tracking-widest">Yükleniyor...</p>
+                <p id="navUser" class="text-xs font-black text-indigo-900 truncate uppercase tracking-widest">@yükleniyor</p>
             </div>
             <nav class="space-y-2 flex-1">
-                <div class="p-4 bg-indigo-600 text-white rounded-xl text-xs font-black cursor-pointer">🌍 Keşfet</div>
-                <div class="p-4 text-slate-400 hover:bg-slate-50 rounded-xl text-xs font-black cursor-pointer">📚 Listelerim</div>
-                <div onclick="cikisYap()" class="p-4 text-red-400 text-xs font-black cursor-pointer italic">❌ Çıkış</div>
+                <div id="btn-kesfet" onclick="verileriGetir('kesfet')" class="nav-link nav-active">🌍 Keşfet</div>
+                <div id="btn-takip" onclick="verileriGetir('takip')" class="nav-link text-slate-400">👥 Takip Ettiklerim</div>
+                <div onclick="listeModalAc()" class="nav-link text-slate-400">📚 Liste Oluştur</div>
+                <div onclick="cikisYap()" class="nav-link text-red-400 italic">❌ Çıkış</div>
             </nav>
             <button onclick="modalAc()" class="mt-8 bg-slate-900 text-white p-5 rounded-2xl font-black shadow-xl hover:scale-105 transition-all">+ YENİ EKLE</button>
         </aside>
@@ -49,20 +53,30 @@
     </div>
 
     <div id="addModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-xl rounded-[3rem] p-10 space-y-4 shadow-2xl">
-            <h3 class="text-xl font-black text-slate-800 italic">Yeni Link Ekle</h3>
+        <div class="bg-white w-full max-w-xl rounded-[3rem] p-10 space-y-4">
+            <h3 class="text-xl font-black italic">Yeni Link Ekle</h3>
             <input id="urlIn" placeholder="Link (https://...)" class="auth-input">
             <input id="titleIn" placeholder="Başlık" class="auth-input">
-            <input id="tagsIn" placeholder="Etiketler (virgülle ayır: eğitim, video)" class="auth-input">
-            <textarea id="descIn" placeholder="Neden kaydediyorsun?" class="auth-input h-24 resize-none"></textarea>
+            <input id="tagsIn" placeholder="Etiketler (virgülle ayır: eğitim, teknoloji)" class="auth-input">
+            <textarea id="descIn" placeholder="Açıklama" class="auth-input h-24 resize-none"></textarea>
             <button onclick="kaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">KÜTÜPHANEYE EKLE</button>
             <button onclick="modalKapat()" class="w-full text-slate-400 font-bold text-sm uppercase">İptal</button>
         </div>
     </div>
 
+    <div id="listModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-xl rounded-[3rem] p-10 space-y-4">
+            <h3 class="text-xl font-black italic">Yeni Liste Oluştur</h3>
+            <input id="listNameIn" placeholder="Liste İsmi (Örn: Okunacaklar)" class="auth-input">
+            <textarea id="listDescIn" placeholder="Liste hakkında kısa bilgi..." class="auth-input h-24 resize-none"></textarea>
+            <button onclick="listeKaydet()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-black">LİSTEYİ OLUŞTUR</button>
+            <button onclick="listeModalKapat()" class="w-full text-slate-400 font-bold text-sm uppercase">Vazgeç</button>
+        </div>
+    </div>
+
 <script>
     const API_URL = "https://link-depom-sunucu.onrender.com";
-    let isLoginMode = true;
+    let currentMod = 'kesfet';
 
     function kontrol() {
         const token = localStorage.getItem('token');
@@ -70,20 +84,72 @@
             document.getElementById('authArea').classList.add('hidden');
             document.getElementById('mainArea').classList.remove('hidden');
             document.getElementById('navUser').innerText = "@" + localStorage.getItem('username');
-            verileriGetir();
+            verileriGetir('kesfet');
         } else {
             document.getElementById('authArea').classList.remove('hidden');
             document.getElementById('mainArea').classList.add('hidden');
         }
     }
 
-    function authModDegistir() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('authUsername').classList.toggle('hidden');
-        document.getElementById('authBtn').innerText = isLoginMode ? 'Giriş Yap' : 'Hesap Oluştur';
-        document.getElementById('authToggle').innerText = isLoginMode ? 'Kayıt Ol' : 'Giriş Yap';
+    async function verileriGetir(mod) {
+        currentMod = mod;
+        const token = localStorage.getItem('token');
+        const userId = localStorage.getItem('userId'); // Login'de bunu kaydetmemiz gerekecek
+        
+        // Aktif buton rengi
+        document.getElementById('btn-kesfet').className = mod === 'kesfet' ? 'nav-link nav-active' : 'nav-link text-slate-400';
+        document.getElementById('btn-takip').className = mod === 'takip' ? 'nav-link nav-active' : 'nav-link text-slate-400';
+
+        const res = await fetch(`${API_URL}/data?mod=${mod}&user=${localStorage.getItem('userId')}`);
+        const data = await res.json();
+        
+        document.getElementById('linkFeed').innerHTML = data.links.map(l => `
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">@${l.userName}</span>
+                        <button onclick="takipEt('${l.userId}')" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md font-bold hover:bg-indigo-600 hover:text-white transition-all">+ TAKİP ET</button>
+                    </div>
+                    <span class="text-[9px] text-slate-400 font-bold">${new Date(l.tarih).toLocaleDateString()}</span>
+                </div>
+                <h4 class="font-extrabold text-slate-800 text-lg leading-tight">${l.baslik}</h4>
+                <p class="text-sm text-slate-500 mt-1 mb-4">${l.aciklama || ''}</p>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    ${l.etiketler.map(t => `<span class="tag-badge">#${t}</span>`).join('')}
+                </div>
+                <div class="flex items-center justify-between pt-4 border-t border-slate-50">
+                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black shadow-lg">GİT ↗</button>
+                    <button class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">➕ LİSTEYE EKLE</button>
+                </div>
+            </div>
+        `).join('');
     }
 
+    async function takipEt(id) {
+        const res = await fetch(`${API_URL}/user/follow/${id}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) alert("Takip edildi!");
+    }
+
+    async function listeKaydet() {
+        const body = { isim: document.getElementById('listNameIn').value, aciklama: document.getElementById('listDescIn').value };
+        const res = await fetch(`${API_URL}/lists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(body)
+        });
+        if (res.ok) { alert("Liste Oluşturuldu!"); listeModalKapat(); }
+    }
+
+    // Modal Fonksiyonları
+    function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
+    function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
+    function listeModalAc() { document.getElementById('listModal').classList.remove('hidden'); }
+    function listeModalKapat() { document.getElementById('listModal').classList.add('hidden'); }
+    
+    // Auth ve Kayıt İşlemleri (Önceki ile aynı ama userId kaydı eklendi)
     async function authIslem() {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPass').value;
@@ -99,15 +165,21 @@
         if (data.token) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('username', data.username);
+            // Sunucudan dönen token içindeki userId'yi decode edip alıyoruz
+            const base64Url = data.token.split('.')[1];
+            const decodedValue = JSON.parse(window.atob(base64Url));
+            localStorage.setItem('userId', decodedValue.userId);
             kontrol();
-        } else if (data.success) {
-            alert("Kayıt başarılı! Şimdi giriş yap.");
-            authModDegistir();
-        } else { alert(data.error); }
+        } else if (data.success) { alert("Başarılı!"); authModDegistir(); }
+    }
+
+    function authModDegistir() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authUsername').classList.toggle('hidden');
+        document.getElementById('authBtn').innerText = isLoginMode ? 'Giriş Yap' : 'Hesap Oluştur';
     }
 
     async function kaydet() {
-        const token = localStorage.getItem('token');
         const body = {
             url: document.getElementById('urlIn').value,
             baslik: document.getElementById('titleIn').value,
@@ -115,52 +187,17 @@
             aciklama: document.getElementById('descIn').value,
             domain: new URL(document.getElementById('urlIn').value).hostname.replace('www.', '')
         };
-
-        const res = await fetch(`${API_URL}/data`, {
+        await fetch(`${API_URL}/data`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify(body)
         });
-
-        if (res.ok) {
-            modalKapat();
-            verileriGetir();
-            alert("🚀 Link Kaydedildi!");
-        }
+        modalKapat(); verileriGetir('kesfet');
     }
 
-    async function verileriGetir() {
-        const res = await fetch(`${API_URL}/data`);
-        const data = await res.json();
-        document.getElementById('linkFeed').innerHTML = data.links.map(l => `
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all">
-                <div class="flex justify-between items-start mb-3">
-                    <span class="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">@${l.userName || 'anonim'}</span>
-                    <span class="text-[9px] text-slate-400 font-bold">${new Date(l.tarih).toLocaleDateString()}</span>
-                </div>
-                <h4 class="font-extrabold text-slate-800 text-lg leading-tight">${l.baslik}</h4>
-                <p class="text-sm text-slate-500 mt-1 mb-4">${l.aciklama || ''}</p>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    ${l.etiketler.map(t => `<span class="tag-badge">#${t}</span>`).join('')}
-                </div>
-                <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-                    <div class="flex gap-4">
-                        <button class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">❤️ Beğen</button>
-                        <button class="text-xs font-bold text-slate-400 hover:text-indigo-500 transition-colors">➕ Listeye Ekle</button>
-                    </div>
-                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black shadow-lg">GİT ↗</button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
-    function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
     function cikisYap() { localStorage.clear(); location.reload(); }
     window.onload = kontrol;
+    let isLoginMode = true;
 </script>
 </body>
 </html>

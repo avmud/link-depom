@@ -31,7 +31,6 @@ const LinkList = mongoose.model('LinkList', {
     aciklama: String,
     olusturan: mongoose.Schema.Types.ObjectId,
     olusturanAd: String,
-    ortaklar: [mongoose.Schema.Types.ObjectId],
     tarih: { type: Date, default: Date.now }
 });
 
@@ -50,7 +49,6 @@ const Link = mongoose.model('Link', {
 
 // --- API ROTALARI ---
 
-// Kimlik Doğrulama Middleware
 const auth = (req, res, next) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
@@ -80,7 +78,34 @@ app.post('/auth/login', async (req, res) => {
     res.json({ token, username: user.username });
 });
 
-// VERİ KAYDETME (Sosyal Özellikli)
+// TAKİP ETME
+app.post('/user/follow/:id', auth, async (req, res) => {
+    try {
+        const targetId = req.params.id;
+        const myId = req.userData.userId;
+        if (targetId === myId) return res.status(400).json({ error: "Kendini takip edemezsin" });
+        await User.findByIdAndUpdate(myId, { $addToSet: { takipEdilenler: targetId } });
+        await User.findByIdAndUpdate(targetId, { $addToSet: { takipciler: myId } });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Hata" }); }
+});
+
+// LİSTE OLUŞTURMA
+app.post('/lists', auth, async (req, res) => {
+    try {
+        const { isim, aciklama } = req.body;
+        const newList = new LinkList({ isim, aciklama, olusturan: req.userData.userId, olusturanAd: req.userData.username });
+        await newList.save();
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Hata" }); }
+});
+
+app.get('/lists', auth, async (req, res) => {
+    const lists = await LinkList.find({ olusturan: req.userData.userId });
+    res.json({ lists });
+});
+
+// VERİ KAYDETME
 app.post('/data', auth, async (req, res) => {
     try {
         const { baslik, url, aciklama, domain, etiketler, listeId } = req.body;
@@ -93,18 +118,25 @@ app.post('/data', auth, async (req, res) => {
         });
         await newLink.save();
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: "Kaydedilemedi" }); }
+    } catch (e) { res.status(500).json({ error: "Hata" }); }
 });
 
-// VERİ GETİRME (Global Feed)
+// VERİ GETİRME (Filtreli)
 app.get('/data', async (req, res) => {
     try {
-        const links = await Link.find().sort({ tarih: -1 }).limit(50);
+        const { mod, user } = req.query;
+        let query = {};
+        
+        if (mod === 'takip' && user) {
+            const userData = await User.findById(user);
+            query = { userId: { $in: userData.takipEdilenler } };
+        }
+        
+        const links = await Link.find(query).sort({ tarih: -1 }).limit(50);
         res.json({ links });
     } catch (e) { res.status(500).json({ error: "Hata" }); }
 });
 
-// --- DOSYA SUNUMU ---
 app.use(express.static(__dirname));
 app.get('/google2907470659972352.html', (req, res) => { res.sendFile('google2907470659972352.html', { root: __dirname }); });
 app.get('/', (req, res) => { res.sendFile('index.html', { root: __dirname }); });

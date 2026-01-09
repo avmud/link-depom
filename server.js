@@ -68,7 +68,7 @@ app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-app.get('*', (req, res) => {
+app.get('*', (req, res) => {  // Burası 71. satır civarı
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 

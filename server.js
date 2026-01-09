@@ -61,10 +61,14 @@ app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-// --- DOSYA SUNUMU ---
-// Statik dosyaları (HTML, CSS, JS) mevcut klasörden sun
+// DOSYA SUNUMUNU TAMAMEN BASİTLEŞTİR
+app.get('/google2907470659972352.html', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'google2907470659972352.html'));
+});
+
+// index.html için statik sunum
 app.use(express.static(__dirname));
 
-app.get('*', (req, res) => {
-    res.sendFile('index.html', { root: __dirname });
+app.get('/', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'index.html'));
 });

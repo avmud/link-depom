@@ -33,7 +33,7 @@ const Link = mongoose.model('Link', {
     tarih: { type: Date, default: Date.now }
 });
 
-// --- TEMEL ROTALAR ---
+// --- TEMEL FONKSİYONLAR ---
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -61,17 +61,18 @@ app.get('/data', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Hata" }); }
 });
 
-// --- GOOGLE DOĞRULAMA DOSYASI ---
+// --- DOSYA SUNUMU ---
+app.use(express.static(__dirname));
+
+// Google doğrulama dosyasını servis et
 app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-// --- STATİK DOSYALAR VE ANA SAYFA ---
-app.use(express.static(__dirname));
-
+// Geri kalan her şey için index.html'i göster
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`LinkUp ${PORT} portunda aktif!`));
+app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda hazir!`));

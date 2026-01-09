@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <<meta name="google-site-verification" content="WMMiVYyJVU__zYRhD6NxpMssUQ4V7iAzEMINfU5XAjk" />
+    
+    <meta name="google-site-verification" content="<meta name="google-site-verification" content="WMMiVYyJVU__zYRhD6NxpMssUQ4V7iAzEMINfU5XAjk" />" />
     
     <title>LinkUp | Dijital Arşiv ve Sosyal Kütüphane</title>
     <meta name="description" content="En sevdiğiniz içerikleri profesyonelce arşivleyin.">
@@ -55,4 +56,112 @@
         <div class="bg-white w-full max-w-xl rounded-[3rem] p-10 shadow-2xl space-y-4">
             <div class="relative">
                 <input id="urlIn" placeholder="Link Yapıştır" class="auth-input">
-                <div id="infoLoader" class="hidden absolute right-4 top-
+                <div id="infoLoader" class="hidden absolute right-4 top-4 loader rounded-full border-2 border-gray-200 h-6 w-6"></div>
+            </div>
+            <input id="titleIn" placeholder="Başlık" class="auth-input">
+            <textarea id="descIn" placeholder="Açıklama" class="auth-input h-28 resize-none"></textarea>
+            <button onclick="kaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg">KÜTÜPHANEYE EKLE</button>
+            <button onclick="modalKapat()" class="w-full text-slate-400 font-bold">KAPAT</button>
+        </div>
+    </div>
+
+<script>
+    const API_URL = "https://link-depom-sunucu.onrender.com";
+    let isLoginMode = true;
+
+    function kontrol() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            document.getElementById('authArea').classList.add('hidden');
+            document.getElementById('mainArea').classList.remove('hidden');
+            document.getElementById('navUser').innerText = localStorage.getItem('username');
+            verileriGetir();
+        } else {
+            document.getElementById('authArea').classList.remove('hidden');
+            document.getElementById('mainArea').classList.add('hidden');
+        }
+    }
+
+    function authModDegistir() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authUsername').classList.toggle('hidden');
+        document.getElementById('authBtn').innerText = isLoginMode ? 'Giriş Yap' : 'Kayıt Ol';
+        document.getElementById('authToggle').innerText = isLoginMode ? 'Giriş Yapmaya Dön' : 'Hesabın yok mu? Kayıt Ol';
+    }
+
+    async function authIslem() {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPass').value;
+        const username = document.getElementById('authUsername').value;
+        const path = isLoginMode ? '/auth/login' : '/auth/register';
+
+        try {
+            const res = await fetch(`${API_URL}${path}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email, password, username })
+            });
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('username', data.username);
+                kontrol();
+            } else if (data.success) {
+                alert("Başarılı! Giriş yapabilirsin.");
+                authModDegistir();
+            } else { alert(data.error || "Hata oluştu"); }
+        } catch (e) { alert("Sunucuya bağlanılamadı!"); }
+    }
+
+    document.getElementById('urlIn').addEventListener('blur', async (e) => {
+        const url = e.target.value;
+        if (!url.startsWith('http')) return;
+        document.getElementById('infoLoader').classList.remove('hidden');
+        try {
+            const res = await fetch(`${API_URL}/fetch-info`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ url })
+            });
+            const info = await res.json();
+            document.getElementById('titleIn').value = info.title;
+            document.getElementById('descIn').value = info.description;
+        } finally { document.getElementById('infoLoader').classList.add('hidden'); }
+    });
+
+    async function verileriGetir() {
+        const res = await fetch(`${API_URL}/data`);
+        const data = await res.json();
+        document.getElementById('linkFeed').innerHTML = data.links.map(l => `
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-500 transition-all">
+                <div>
+                    <h4 class="font-bold text-slate-800">${l.baslik}</h4>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase italic">${l.domain || ''}</p>
+                </div>
+                <button onclick="window.open('${l.url}')" class="px-8 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black hover:bg-indigo-600 transition-all shadow-lg">GİT ↗</button>
+            </div>
+        `).join('');
+    }
+
+    async function kaydet() {
+        const payload = {
+            url: document.getElementById('urlIn').value,
+            baslik: document.getElementById('titleIn').value,
+            aciklama: document.getElementById('descIn').value,
+            token: localStorage.getItem('token')
+        };
+        const res = await fetch(`${API_URL}/kaydet`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if(res.ok) { modalKapat(); verileriGetir(); }
+    }
+
+    function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
+    function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
+    function cikisYap() { localStorage.clear(); location.reload(); }
+    window.onload = kontrol;
+</script>
+</body>
+</html>

@@ -25,8 +25,10 @@ const User = mongoose.model('User', {
 });
 
 const Link = mongoose.model('Link', {
-    baslik: String, url: String, aciklama: String, 
-    userId: mongoose.Schema.Types.ObjectId, domain: String,
+    baslik: String, 
+    url: String, 
+    aciklama: String, 
+    domain: String,
     tarih: { type: Date, default: Date.now }
 });
 
@@ -51,6 +53,17 @@ app.post('/auth/login', async (req, res) => {
     res.json({ token, username: user.username });
 });
 
+// VERİ KAYDETME (Düzeltilen Kısım)
+app.post('/data', async (req, res) => {
+    try {
+        const { baslik, url, aciklama, domain } = req.body;
+        const newLink = new Link({ baslik, url, aciklama, domain });
+        await newLink.save();
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Kaydedilemedi" }); }
+});
+
+// VERİ GETİRME
 app.get('/data', async (req, res) => {
     try {
         const links = await Link.find().sort({ tarih: -1 }).limit(50);
@@ -58,21 +71,17 @@ app.get('/data', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Hata" }); }
 });
 
-// --- DOSYA SUNUMU (HATAYI BİTİREN KISIM) ---
-// Statik dosyaları sun
+// --- DOSYA SUNUMU ---
 app.use(express.static(__dirname));
 
-// Google onay dosyasını direkt sun
 app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile('google2907470659972352.html', { root: __dirname });
 });
 
-// Ana sayfa rotası (Hata veren '*' yerine '/' kullanıyoruz)
 app.get('/', (req, res) => {
     res.sendFile('index.html', { root: __dirname });
 });
 
-// --- SUNUCU BAŞLATMA ---
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Sunucu ${PORT} portunda hazır!`);

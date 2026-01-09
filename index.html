@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <meta name="google-site-verification" content="WMMiVYyJVU__zYRhD6NxpMssUQ4V7iAzEMINfU5XAjk" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Linkup</title>
-    ...
-</head>
-    ...
-</head>
     <meta name="description" content="En sevdiğiniz içerikleri profesyonelce arşivleyin.">
+    <title>Linkup</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -56,10 +52,7 @@
 
     <div id="addModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-xl rounded-[3rem] p-10 shadow-2xl space-y-4">
-            <div class="relative">
-                <input id="urlIn" placeholder="Link Yapıştır" class="auth-input">
-                <div id="infoLoader" class="hidden absolute right-4 top-4 loader"></div>
-            </div>
+            <input id="urlIn" placeholder="Link Yapıştır" class="auth-input">
             <input id="titleIn" placeholder="Başlık" class="auth-input">
             <textarea id="descIn" placeholder="Açıklama" class="auth-input h-28 resize-none"></textarea>
             <button onclick="kaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg">KÜTÜPHANEYE EKLE</button>
@@ -90,7 +83,7 @@
         isLoginMode = !isLoginMode;
         document.getElementById('authUsername').classList.toggle('hidden');
         document.getElementById('authBtn').innerText = isLoginMode ? 'Giriş Yap' : 'Kayıt Ol';
-        document.getElementById('authToggle').innerText = isLoginMode ? 'Hesabın var mı? Giriş Yap' : 'Hesabın yok mu? Kayıt Ol';
+        document.getElementById('authToggle').innerText = isLoginMode ? 'Kayıt Ol' : 'Giriş Yap';
     }
 
     async function authIslem() {
@@ -115,6 +108,38 @@
                 authModDegistir();
             } else { alert(data.error || "Hata oluştu"); }
         } catch (e) { alert("Sunucuya bağlanılamadı!"); }
+    }
+
+    async function kaydet() {
+        const url = document.getElementById('urlIn').value;
+        const baslik = document.getElementById('titleIn').value;
+        const aciklama = document.getElementById('descIn').value;
+        const token = localStorage.getItem('token');
+
+        if (!url || !baslik) return alert("Lütfen en azından başlık ve URL girin!");
+
+        let domain = "";
+        try { domain = new URL(url).hostname.replace('www.', ''); } catch(e) {}
+
+        try {
+            const res = await fetch(`${API_URL}/data`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ baslik, url, aciklama, domain })
+            });
+
+            if (res.ok) {
+                modalKapat();
+                document.getElementById('urlIn').value = "";
+                document.getElementById('titleIn').value = "";
+                document.getElementById('descIn').value = "";
+                verileriGetir();
+                alert("🚀 Link kütüphaneye eklendi!");
+            }
+        } catch (e) { alert("Bağlantı hatası!"); }
     }
 
     async function verileriGetir() {

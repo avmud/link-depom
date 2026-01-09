@@ -61,11 +61,14 @@ app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// --- DOSYA SUNUMU ---
+// Statik dosyaları (HTML, CSS, JS) mevcut klasörden sun
+app.use(express.static(path.join(__dirname)));
+
+app.get('/google2907470659972352.html', (req, res) => {
+    res.sendFile('google2907470659972352.html', { root: __dirname });
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => {
-    console.log(`Sunucu ${PORT} portunda hazır!`);
+app.get('*', (req, res) => {
+    res.sendFile('index.html', { root: __dirname });
 });

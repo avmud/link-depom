@@ -21,7 +21,18 @@ mongoose.connect(MONGO_URI)
 const User = mongoose.model('User', {
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
-    username: String
+    username: { type: String, unique: true },
+    takipciler: [mongoose.Schema.Types.ObjectId],
+    takipEdilenler: [mongoose.Schema.Types.ObjectId]
+});
+
+const LinkList = mongoose.model('LinkList', {
+    isim: String,
+    aciklama: String,
+    olusturan: mongoose.Schema.Types.ObjectId,
+    olusturanAd: String,
+    ortaklar: [mongoose.Schema.Types.ObjectId],
+    tarih: { type: Date, default: Date.now }
 });
 
 const Link = mongoose.model('Link', {
@@ -29,10 +40,26 @@ const Link = mongoose.model('Link', {
     url: String, 
     aciklama: String, 
     domain: String,
+    etiketler: [String],
+    userId: mongoose.Schema.Types.ObjectId,
+    userName: String,
+    listeId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    beğeniler: [mongoose.Schema.Types.ObjectId],
     tarih: { type: Date, default: Date.now }
 });
 
 // --- API ROTALARI ---
+
+// Kimlik Doğrulama Middleware
+const auth = (req, res, next) => {
+    try {
+        const token = req.headers.authorization.split(" ")[1];
+        const decoded = jwt.verify(token, SECRET_KEY);
+        req.userData = decoded;
+        next();
+    } catch (e) { return res.status(401).json({ error: "Yetkisiz" }); }
+};
+
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -40,7 +67,7 @@ app.post('/auth/register', async (req, res) => {
         const user = new User({ email, password: hashedPassword, username });
         await user.save();
         res.json({ success: true });
-    } catch (e) { res.status(400).json({ error: "Hata!" }); }
+    } catch (e) { res.status(400).json({ error: "Hata! Kullanıcı adı veya e-posta alınmış olabilir." }); }
 });
 
 app.post('/auth/login', async (req, res) => {
@@ -53,17 +80,23 @@ app.post('/auth/login', async (req, res) => {
     res.json({ token, username: user.username });
 });
 
-// VERİ KAYDETME (Düzeltilen Kısım)
-app.post('/data', async (req, res) => {
+// VERİ KAYDETME (Sosyal Özellikli)
+app.post('/data', auth, async (req, res) => {
     try {
-        const { baslik, url, aciklama, domain } = req.body;
-        const newLink = new Link({ baslik, url, aciklama, domain });
+        const { baslik, url, aciklama, domain, etiketler, listeId } = req.body;
+        const newLink = new Link({ 
+            baslik, url, aciklama, domain, 
+            etiketler: etiketler ? etiketler.split(',').map(e => e.trim()) : [],
+            userId: req.userData.userId,
+            userName: req.userData.username,
+            listeId: listeId || null
+        });
         await newLink.save();
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: "Kaydedilemedi" }); }
 });
 
-// VERİ GETİRME
+// VERİ GETİRME (Global Feed)
 app.get('/data', async (req, res) => {
     try {
         const links = await Link.find().sort({ tarih: -1 }).limit(50);
@@ -73,16 +106,8 @@ app.get('/data', async (req, res) => {
 
 // --- DOSYA SUNUMU ---
 app.use(express.static(__dirname));
-
-app.get('/google2907470659972352.html', (req, res) => {
-    res.sendFile('google2907470659972352.html', { root: __dirname });
-});
-
-app.get('/', (req, res) => {
-    res.sendFile('index.html', { root: __dirname });
-});
+app.get('/google2907470659972352.html', (req, res) => { res.sendFile('google2907470659972352.html', { root: __dirname }); });
+app.get('/', (req, res) => { res.sendFile('index.html', { root: __dirname }); });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Sunucu ${PORT} portunda hazır!`);
-});
+app.listen(PORT, "0.0.0.0", () => { console.log(`🚀 Sunucu Hazır!`); });

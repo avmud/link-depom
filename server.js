@@ -33,7 +33,7 @@ const Link = mongoose.model('Link', {
     tarih: { type: Date, default: Date.now }
 });
 
-// --- TEMEL FONKSİYONLAR ---
+// --- ROTALAR ---
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -64,15 +64,13 @@ app.get('/data', async (req, res) => {
 // --- DOSYA SUNUMU ---
 app.use(express.static(__dirname));
 
-// Google doğrulama dosyasını servis et
 app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-// Geri kalan her şey için index.html'i göster
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda hazir!`));
+app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda hazır!`));

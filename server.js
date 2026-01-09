@@ -28,6 +28,7 @@ const LinkList = mongoose.model('LinkList', {
     aciklama: String,
     olusturan: mongoose.Schema.Types.ObjectId,
     olusturanAd: String,
+    ortaklar: { type: [mongoose.Schema.Types.ObjectId], default: [] }, // YENİ: Ortak yazarlar
     tarih: { type: Date, default: Date.now }
 });
 
@@ -54,6 +55,8 @@ const auth = (req, res, next) => {
 };
 
 // --- ROTALAR ---
+
+// AUTH
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -71,12 +74,12 @@ app.post('/auth/login', async (req, res) => {
     res.json({ token, username: user.username, userId: user._id });
 });
 
-// BEĞENİ SİSTEMİ
+// BEĞENİ
 app.post('/like/:id', auth, async (req, res) => {
     const link = await Link.findById(req.params.id);
     const userId = req.userData.userId;
     if (link.beğeniler.includes(userId)) {
-        link.beğeniler = link.beğeniler.filter(id => id.toString() !== userId);
+        link.beğeniler = link.beğeniler.filter(id => id.toString() !== userId.toString());
     } else {
         link.beğeniler.push(userId);
     }
@@ -84,7 +87,7 @@ app.post('/like/:id', auth, async (req, res) => {
     res.json({ count: link.beğeniler.length });
 });
 
-// LİSTEYE EKLEME (KOPYALAMA / ÖNERİ)
+// LİSTEYE KOPYALAMA
 app.post('/data/copy', auth, async (req, res) => {
     try {
         const { linkId, listeId } = req.body;
@@ -103,6 +106,7 @@ app.post('/data/copy', auth, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Eklenemedi" }); }
 });
 
+// TAKİP
 app.post('/user/follow/:id', auth, async (req, res) => {
     const targetId = req.params.id;
     const myId = req.userData.userId;
@@ -111,17 +115,39 @@ app.post('/user/follow/:id', auth, async (req, res) => {
     res.json({ success: true });
 });
 
+// LİSTELER
 app.post('/lists', auth, async (req, res) => {
     const { isim, aciklama } = req.body;
     await new LinkList({ isim, aciklama, olusturan: req.userData.userId, olusturanAd: req.userData.username }).save();
     res.json({ success: true });
 });
 
+// YENİ: Ortak olunan ve kendi listelerimi getir
 app.get('/lists', auth, async (req, res) => {
-    const lists = await LinkList.find({ olusturan: req.userData.userId });
+    const lists = await LinkList.find({ 
+        $or: [
+            { olusturan: req.userData.userId },
+            { ortaklar: req.userData.userId }
+        ]
+    });
     res.json({ lists });
 });
 
+// YENİ: Ortak yazar ekle
+app.post('/lists/:id/add-collaborator', auth, async (req, res) => {
+    try {
+        const { username } = req.body;
+        const targetUser = await User.findOne({ username });
+        if (!targetUser) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
+        
+        await LinkList.findByIdAndUpdate(req.params.id, { 
+            $addToSet: { ortaklar: targetUser._id } 
+        });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Hata" }); }
+});
+
+// VERİ EKLEME
 app.post('/data', auth, async (req, res) => {
     const { baslik, url, aciklama, domain, etiketler } = req.body;
     await new Link({ 
@@ -133,13 +159,18 @@ app.post('/data', auth, async (req, res) => {
     res.json({ success: true });
 });
 
+// VERİ ÇEKME (Filtreleme desteğiyle)
 app.get('/data', async (req, res) => {
-    const { mod, user } = req.query;
+    const { mod, user, listId } = req.query;
     let query = {};
+
     if (mod === 'takip' && user) {
         const u = await User.findById(user);
         query = { userId: { $in: u.takipEdilenler } };
+    } else if (mod === 'liste' && listId) {
+        query = { listeId: listId };
     }
+    
     const links = await Link.find(query).sort({ tarih: -1 });
     res.json({ links });
 });

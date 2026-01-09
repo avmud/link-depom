@@ -35,7 +35,8 @@
             <nav class="space-y-2 flex-1">
                 <div id="btn-kesfet" onclick="verileriGetir('kesfet')" class="nav-link nav-active">🌍 Keşfet</div>
                 <div id="btn-takip" onclick="verileriGetir('takip')" class="nav-link text-slate-400">👥 Takip Ettiklerim</div>
-                <div onclick="listeModalAc()" class="nav-link text-slate-400">📚 Liste Oluştur</div>
+                <div id="btn-listelerim" onclick="listelerimEkraniniAc()" class="nav-link text-slate-400">📚 Listelerim</div>
+                <div onclick="listeModalAc()" class="nav-link text-slate-400 text-[10px] opacity-60">+ Yeni Liste Oluştur</div>
                 <div onclick="cikisYap()" class="nav-link text-red-400 italic">❌ Çıkış</div>
             </nav>
             <button onclick="modalAc()" class="mt-8 bg-slate-900 text-white p-5 rounded-2xl font-black">+ YENİ EKLE</button>
@@ -76,10 +77,21 @@
         </div>
     </div>
 
+    <div id="collabModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[70] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-10 space-y-4">
+            <h3 class="text-lg font-black italic">Ortak Yazar Ekle</h3>
+            <p class="text-[10px] text-slate-400 font-bold uppercase">Bu kişi listeye link ekleyebilecek.</p>
+            <input id="collabUserIn" placeholder="Kullanıcı Adı" class="auth-input">
+            <button onclick="ortakEkleKaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">YETKİ VER</button>
+            <button onclick="document.getElementById('collabModal').classList.add('hidden')" class="w-full text-slate-400 font-bold text-sm">Vazgeç</button>
+        </div>
+    </div>
+
 <script>
     const API_URL = "https://link-depom-sunucu.onrender.com";
     let isLoginMode = true;
     let selectedLinkId = null;
+    let targetListIdForCollab = null;
 
     function kontrol() {
         const token = localStorage.getItem('token');
@@ -94,19 +106,23 @@
         }
     }
 
-    async function verileriGetir(mod) {
-        document.getElementById('btn-kesfet').className = mod === 'kesfet' ? 'nav-link nav-active' : 'nav-link text-slate-400';
-        document.getElementById('btn-takip').className = mod === 'takip' ? 'nav-link nav-active' : 'nav-link text-slate-400';
+    async function verileriGetir(mod, listId = null) {
+        // Navigasyon aktifliği temizle
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('nav-active'));
+        if(mod === 'kesfet' || mod === 'takip') document.getElementById('btn-' + mod).classList.add('nav-active');
 
-        const res = await fetch(`${API_URL}/data?mod=${mod}&user=${localStorage.getItem('userId')}`);
+        let url = `${API_URL}/data?mod=${mod}&user=${localStorage.getItem('userId')}`;
+        if(listId) url += `&listId=${listId}`;
+
+        const res = await fetch(url);
         const data = await res.json();
         
-        document.getElementById('linkFeed').innerHTML = data.links.map(l => `
+        document.getElementById('linkFeed').innerHTML = data.links.length ? data.links.map(l => `
             <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
                 <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
                         <span class="text-[10px] font-black text-indigo-500 uppercase">@${l.userName}</span>
-                        <button onclick="takipEt('${l.userId}')" class="text-[8px] bg-indigo-50 px-2 py-1 rounded font-bold text-indigo-600">+ TAKİP ET</button>
+                        <button onclick="takipEt('${l.userId}')" class="text-[8px] bg-indigo-50 px-2 py-1 rounded font-bold text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all">+ TAKİP ET</button>
                     </div>
                     <span class="text-[9px] text-slate-400 font-bold">${new Date(l.tarih).toLocaleDateString()}</span>
                 </div>
@@ -120,10 +136,38 @@
                         <button onclick="likeEt('${l._id}')" class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">❤️ <span id="like-${l._id}">${l.beğeniler.length}</span></button>
                         <button onclick="listeSecimAc('${l._id}')" class="text-xs font-bold text-slate-400 hover:text-indigo-500 transition-colors">➕ LİSTEME EKLE</button>
                     </div>
-                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black">GİT ↗</button>
+                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black shadow-lg">GİT ↗</button>
                 </div>
             </div>
-        `).join('');
+        `).join('') : '<p class="text-center text-slate-400 font-bold py-10">Burada henüz bir şey yok...</p>';
+    }
+
+    async function listelerimEkraniniAc() {
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('nav-active'));
+        document.getElementById('btn-listelerim').classList.add('nav-active');
+
+        const res = await fetch(`${API_URL}/lists`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        
+        document.getElementById('linkFeed').innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                ${data.lists.map(list => `
+                    <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:border-indigo-500 transition-all cursor-pointer group">
+                        <div onclick="verileriGetir('liste', '${list._id}')">
+                            <h3 class="text-xl font-black text-slate-800 italic">📁 ${list.isim}</h3>
+                            <p class="text-xs text-slate-400 mt-1">${list.aciklama || 'Açıklama yok'}</p>
+                            <p class="text-[10px] font-bold text-indigo-400 mt-4 uppercase">Sahibi: @${list.olusturanAd}</p>
+                        </div>
+                        <div class="mt-6 pt-4 border-t flex justify-between items-center">
+                            <button onclick="ortakModalAc('${list._id}')" class="text-[10px] font-black text-slate-300 hover:text-indigo-600">+ ORTAK EKLE</button>
+                            <span class="text-[9px] text-slate-300 font-bold">${new Date(list.tarih).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
     }
 
     async function likeEt(id) {
@@ -141,12 +185,8 @@
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
+        if (data.lists.length === 0) return alert("Önce bir liste oluşturmalısın!");
         
-        if (data.lists.length === 0) {
-            alert("Önce bir liste oluşturmalısın!");
-            return;
-        }
-
         document.getElementById('myListsContainer').innerHTML = data.lists.map(list => `
             <div onclick="listeyeKopyala('${list._id}')" class="p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-indigo-600 hover:text-white transition-all font-bold text-sm">
                 📁 ${list.isim}
@@ -158,16 +198,26 @@
     async function listeyeKopyala(listeId) {
         const res = await fetch(`${API_URL}/data/copy`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` 
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
             body: JSON.stringify({ linkId: selectedLinkId, listeId: listeId })
         });
-        if (res.ok) {
-            alert("Kısayol listenize eklendi/kopyalandı!");
-            document.getElementById('selectListModal').classList.add('hidden');
-        }
+        if (res.ok) { alert("Eklendi!"); document.getElementById('selectListModal').classList.add('hidden'); }
+    }
+
+    function ortakModalAc(listId) {
+        targetListIdForCollab = listId;
+        document.getElementById('collabModal').classList.remove('hidden');
+    }
+
+    async function ortakEkleKaydet() {
+        const username = document.getElementById('collabUserIn').value;
+        const res = await fetch(`${API_URL}/lists/${targetListIdForCollab}/add-collaborator`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ username })
+        });
+        if (res.ok) { alert("Ortak başarıyla eklendi!"); document.getElementById('collabModal').classList.add('hidden'); }
+        else { alert("Kullanıcı bulunamadı veya bir hata oluştu."); }
     }
 
     async function takipEt(id) {
@@ -221,7 +271,7 @@
             body: JSON.stringify({ isim: document.getElementById('listNameIn').value, aciklama: document.getElementById('listDescIn').value })
         });
         listeModalKapat();
-        alert("Liste oluşturuldu!");
+        listelerimEkraniniAc();
     }
 
     function authModDegistir() { isLoginMode = !isLoginMode; document.getElementById('authUsername').classList.toggle('hidden'); }

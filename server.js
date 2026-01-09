@@ -100,4 +100,13 @@ app.get('/sitemap.xml', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+const path = require('path');
+
+// Statik dosyaları (index.html, resimler vb.) sunar
+app.use(express.static(path.join(__dirname, '/')));
+
+// Herhangi bir sayfaya girilirse index.html'i gönderir
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 app.listen(PORT, () => console.log(`LinkUp Sunucusu ${PORT} portunda devrim yapıyor!`));

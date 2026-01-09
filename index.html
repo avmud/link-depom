@@ -2,49 +2,43 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="google-site-verification" content="WMMiVYyJVU__zYRhD6NxpMssUQ4V7iAzEMINfU5XAjk" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LinkUp - Sosyal Arşiv</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .auth-input { background-color: #f1f5f9; width: 100%; padding: 1rem; border-radius: 1rem; outline: none; border: 2px solid transparent; transition: 0.2s; }
-        .auth-input:focus { border-color: #4f46e5; background-color: white; }
-        .tag-badge { background: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        .auth-input { background: #f1f5f9; width: 100%; padding: 1rem; border-radius: 1rem; outline: none; border: 2px solid transparent; }
+        .auth-input:focus { border-color: #4f46e5; background: white; }
+        .tag-badge { background: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800; }
         .nav-link { padding: 1rem; border-radius: 1rem; font-size: 12px; font-weight: 900; cursor: pointer; transition: 0.2s; }
-        .nav-link:hover { background: #f8fafc; color: #4f46e5; }
         .nav-active { background: #4f46e5 !important; color: white !important; }
     </style>
 </head>
 <body class="bg-[#F8FAFC]">
 
     <div id="authArea" class="hidden min-h-screen flex items-center justify-center p-6 bg-indigo-600">
-        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md space-y-6 text-center">
-            <h2 class="text-4xl font-black italic text-indigo-600 tracking-tighter">LinkUp</h2>
-            <div class="space-y-4">
-                <input id="authUsername" placeholder="Kullanıcı Adı" class="auth-input hidden">
-                <input id="authEmail" type="email" placeholder="E-posta" class="auth-input">
-                <input id="authPass" type="password" placeholder="Şifre" class="auth-input">
-                <button onclick="authIslem()" id="authBtn" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">Giriş Yap</button>
-                <p onclick="authModDegistir()" id="authToggle" class="text-xs font-bold text-slate-400 cursor-pointer uppercase italic">Kayıt Ol</p>
-            </div>
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md space-y-4 text-center">
+            <h2 class="text-4xl font-black italic text-indigo-600">LinkUp</h2>
+            <input id="authUsername" placeholder="Kullanıcı Adı" class="auth-input hidden">
+            <input id="authEmail" type="email" placeholder="E-posta" class="auth-input">
+            <input id="authPass" type="password" placeholder="Şifre" class="auth-input">
+            <button onclick="authIslem()" id="authBtn" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">Giriş Yap</button>
+            <p onclick="authModDegistir()" id="authToggle" class="text-xs font-bold text-slate-400 cursor-pointer uppercase">Kayıt Ol</p>
         </div>
     </div>
 
     <div id="mainArea" class="hidden min-h-screen flex flex-col md:flex-row">
-        <aside class="w-full md:w-72 bg-white border-r border-slate-200 p-8 flex flex-col">
-            <h1 class="text-3xl font-black text-indigo-600 mb-10 italic tracking-tighter">LinkUp</h1>
-            <div class="mb-6 p-4 bg-indigo-50 rounded-2xl">
-                <p id="navUser" class="text-xs font-black text-indigo-900 truncate uppercase tracking-widest">@yükleniyor</p>
-            </div>
+        <aside class="w-full md:w-72 bg-white border-r p-8 flex flex-col">
+            <h1 class="text-3xl font-black text-indigo-600 mb-10 italic">LinkUp</h1>
+            <div id="navUser" class="mb-6 p-4 bg-indigo-50 rounded-2xl text-xs font-black text-indigo-900 uppercase">@yükleniyor</div>
             <nav class="space-y-2 flex-1">
                 <div id="btn-kesfet" onclick="verileriGetir('kesfet')" class="nav-link nav-active">🌍 Keşfet</div>
                 <div id="btn-takip" onclick="verileriGetir('takip')" class="nav-link text-slate-400">👥 Takip Ettiklerim</div>
                 <div onclick="listeModalAc()" class="nav-link text-slate-400">📚 Liste Oluştur</div>
                 <div onclick="cikisYap()" class="nav-link text-red-400 italic">❌ Çıkış</div>
             </nav>
-            <button onclick="modalAc()" class="mt-8 bg-slate-900 text-white p-5 rounded-2xl font-black shadow-xl hover:scale-105 transition-all">+ YENİ EKLE</button>
+            <button onclick="modalAc()" class="mt-8 bg-slate-900 text-white p-5 rounded-2xl font-black">+ YENİ EKLE</button>
         </aside>
 
         <main class="flex-1 p-6 md:p-12 overflow-y-auto">
@@ -57,26 +51,35 @@
             <h3 class="text-xl font-black italic">Yeni Link Ekle</h3>
             <input id="urlIn" placeholder="Link (https://...)" class="auth-input">
             <input id="titleIn" placeholder="Başlık" class="auth-input">
-            <input id="tagsIn" placeholder="Etiketler (virgülle ayır: eğitim, teknoloji)" class="auth-input">
+            <input id="tagsIn" placeholder="Etiketler (eğitim, teknoloji)" class="auth-input">
             <textarea id="descIn" placeholder="Açıklama" class="auth-input h-24 resize-none"></textarea>
-            <button onclick="kaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">KÜTÜPHANEYE EKLE</button>
-            <button onclick="modalKapat()" class="w-full text-slate-400 font-bold text-sm uppercase">İptal</button>
+            <button onclick="kaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">EKLE</button>
+            <button onclick="modalKapat()" class="w-full text-slate-400 font-bold text-sm">İptal</button>
         </div>
     </div>
 
     <div id="listModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-xl rounded-[3rem] p-10 space-y-4">
             <h3 class="text-xl font-black italic">Yeni Liste Oluştur</h3>
-            <input id="listNameIn" placeholder="Liste İsmi (Örn: Okunacaklar)" class="auth-input">
-            <textarea id="listDescIn" placeholder="Liste hakkında kısa bilgi..." class="auth-input h-24 resize-none"></textarea>
-            <button onclick="listeKaydet()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-black">LİSTEYİ OLUŞTUR</button>
-            <button onclick="listeModalKapat()" class="w-full text-slate-400 font-bold text-sm uppercase">Vazgeç</button>
+            <input id="listNameIn" placeholder="Liste İsmi" class="auth-input">
+            <textarea id="listDescIn" placeholder="Açıklama" class="auth-input h-24 resize-none"></textarea>
+            <button onclick="listeKaydet()" class="w-full p-4 bg-slate-900 text-white rounded-2xl font-black">OLUŞTUR</button>
+            <button onclick="listeModalKapat()" class="w-full text-slate-400 font-bold text-sm">Vazgeç</button>
+        </div>
+    </div>
+
+    <div id="selectListModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md rounded-[3rem] p-10 space-y-4">
+            <h3 class="text-xl font-black italic text-center">Hangi Listeye?</h3>
+            <div id="myListsContainer" class="space-y-2 max-h-60 overflow-y-auto p-2"></div>
+            <button onclick="document.getElementById('selectListModal').classList.add('hidden')" class="w-full text-slate-400 font-bold text-sm">İPTAL</button>
         </div>
     </div>
 
 <script>
     const API_URL = "https://link-depom-sunucu.onrender.com";
-    let currentMod = 'kesfet';
+    let isLoginMode = true;
+    let selectedLinkId = null;
 
     function kontrol() {
         const token = localStorage.getItem('token');
@@ -92,11 +95,6 @@
     }
 
     async function verileriGetir(mod) {
-        currentMod = mod;
-        const token = localStorage.getItem('token');
-        const userId = localStorage.getItem('userId'); // Login'de bunu kaydetmemiz gerekecek
-        
-        // Aktif buton rengi
         document.getElementById('btn-kesfet').className = mod === 'kesfet' ? 'nav-link nav-active' : 'nav-link text-slate-400';
         document.getElementById('btn-takip').className = mod === 'takip' ? 'nav-link nav-active' : 'nav-link text-slate-400';
 
@@ -104,25 +102,72 @@
         const data = await res.json();
         
         document.getElementById('linkFeed').innerHTML = data.links.map(l => `
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-xl transition-all">
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
                 <div class="flex justify-between items-center mb-3">
                     <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-tighter">@${l.userName}</span>
-                        <button onclick="takipEt('${l.userId}')" class="text-[9px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md font-bold hover:bg-indigo-600 hover:text-white transition-all">+ TAKİP ET</button>
+                        <span class="text-[10px] font-black text-indigo-500 uppercase">@${l.userName}</span>
+                        <button onclick="takipEt('${l.userId}')" class="text-[8px] bg-indigo-50 px-2 py-1 rounded font-bold text-indigo-600">+ TAKİP ET</button>
                     </div>
                     <span class="text-[9px] text-slate-400 font-bold">${new Date(l.tarih).toLocaleDateString()}</span>
                 </div>
-                <h4 class="font-extrabold text-slate-800 text-lg leading-tight">${l.baslik}</h4>
+                <h4 class="font-extrabold text-slate-800 text-lg">${l.baslik}</h4>
                 <p class="text-sm text-slate-500 mt-1 mb-4">${l.aciklama || ''}</p>
                 <div class="flex flex-wrap gap-2 mb-4">
                     ${l.etiketler.map(t => `<span class="tag-badge">#${t}</span>`).join('')}
                 </div>
-                <div class="flex items-center justify-between pt-4 border-t border-slate-50">
-                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black shadow-lg">GİT ↗</button>
-                    <button class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">➕ LİSTEYE EKLE</button>
+                <div class="flex items-center justify-between pt-4 border-t">
+                    <div class="flex gap-4">
+                        <button onclick="likeEt('${l._id}')" class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors">❤️ <span id="like-${l._id}">${l.beğeniler.length}</span></button>
+                        <button onclick="listeSecimAc('${l._id}')" class="text-xs font-bold text-slate-400 hover:text-indigo-500 transition-colors">➕ LİSTEME EKLE</button>
+                    </div>
+                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black">GİT ↗</button>
                 </div>
             </div>
         `).join('');
+    }
+
+    async function likeEt(id) {
+        const res = await fetch(`${API_URL}/like/${id}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        document.getElementById(`like-${id}`).innerText = data.count;
+    }
+
+    async function listeSecimAc(linkId) {
+        selectedLinkId = linkId;
+        const res = await fetch(`${API_URL}/lists`, {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        const data = await res.json();
+        
+        if (data.lists.length === 0) {
+            alert("Önce bir liste oluşturmalısın!");
+            return;
+        }
+
+        document.getElementById('myListsContainer').innerHTML = data.lists.map(list => `
+            <div onclick="listeyeKopyala('${list._id}')" class="p-4 bg-slate-50 rounded-2xl cursor-pointer hover:bg-indigo-600 hover:text-white transition-all font-bold text-sm">
+                📁 ${list.isim}
+            </div>
+        `).join('');
+        document.getElementById('selectListModal').classList.remove('hidden');
+    }
+
+    async function listeyeKopyala(listeId) {
+        const res = await fetch(`${API_URL}/data/copy`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` 
+            },
+            body: JSON.stringify({ linkId: selectedLinkId, listeId: listeId })
+        });
+        if (res.ok) {
+            alert("Kısayol listenize eklendi/kopyalandı!");
+            document.getElementById('selectListModal').classList.add('hidden');
+        }
     }
 
     async function takipEt(id) {
@@ -133,23 +178,6 @@
         if (res.ok) alert("Takip edildi!");
     }
 
-    async function listeKaydet() {
-        const body = { isim: document.getElementById('listNameIn').value, aciklama: document.getElementById('listDescIn').value };
-        const res = await fetch(`${API_URL}/lists`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-            body: JSON.stringify(body)
-        });
-        if (res.ok) { alert("Liste Oluşturuldu!"); listeModalKapat(); }
-    }
-
-    // Modal Fonksiyonları
-    function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
-    function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
-    function listeModalAc() { document.getElementById('listModal').classList.remove('hidden'); }
-    function listeModalKapat() { document.getElementById('listModal').classList.add('hidden'); }
-    
-    // Auth ve Kayıt İşlemleri (Önceki ile aynı ama userId kaydı eklendi)
     async function authIslem() {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPass').value;
@@ -165,18 +193,9 @@
         if (data.token) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('username', data.username);
-            // Sunucudan dönen token içindeki userId'yi decode edip alıyoruz
-            const base64Url = data.token.split('.')[1];
-            const decodedValue = JSON.parse(window.atob(base64Url));
-            localStorage.setItem('userId', decodedValue.userId);
+            localStorage.setItem('userId', data.userId);
             kontrol();
-        } else if (data.success) { alert("Başarılı!"); authModDegistir(); }
-    }
-
-    function authModDegistir() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('authUsername').classList.toggle('hidden');
-        document.getElementById('authBtn').innerText = isLoginMode ? 'Giriş Yap' : 'Hesap Oluştur';
+        } else if (data.success) { alert("Başarılı! Giriş yapın."); authModDegistir(); }
     }
 
     async function kaydet() {
@@ -195,9 +214,23 @@
         modalKapat(); verileriGetir('kesfet');
     }
 
+    async function listeKaydet() {
+        await fetch(`${API_URL}/lists`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ isim: document.getElementById('listNameIn').value, aciklama: document.getElementById('listDescIn').value })
+        });
+        listeModalKapat();
+        alert("Liste oluşturuldu!");
+    }
+
+    function authModDegistir() { isLoginMode = !isLoginMode; document.getElementById('authUsername').classList.toggle('hidden'); }
+    function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
+    function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
+    function listeModalAc() { document.getElementById('listModal').classList.remove('hidden'); }
+    function listeModalKapat() { document.getElementById('listModal').classList.add('hidden'); }
     function cikisYap() { localStorage.clear(); location.reload(); }
     window.onload = kontrol;
-    let isLoginMode = true;
 </script>
 </body>
 </html>

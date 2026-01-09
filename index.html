@@ -3,85 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp - Canlı Bildirimler</title>
+    <title>LinkUp - Sosyal Kısayol Arşivi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .nav-link { padding: 1rem; border-radius: 1.25rem; font-size: 13px; font-weight: 800; cursor: pointer; transition: 0.3s; color: #94a3b8; display: flex; align-items: center; justify-content: justify; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; }
+        .nav-link { padding: 0.8rem 1.2rem; border-radius: 1rem; font-size: 13px; font-weight: 800; cursor: pointer; color: #64748b; transition: 0.2s; }
+        .nav-link:hover { background: #f1f5f9; color: #4f46e5; }
         .nav-active { background: #4f46e5 !important; color: white !important; }
-        .notif-dot { width: 8px; height: 8px; background: #ef4444; border-radius: 50%; position: absolute; right: 10px; top: 10px; }
-        .auth-input { background: #f1f5f9; width: 100%; padding: 1rem; border-radius: 1rem; outline: none; border: 2px solid transparent; }
-        .tag-badge { background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
+        .cat-tag { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; background: #eef2ff; color: #4338ca; }
+        .comment-box { background: #f8fafc; border-radius: 1rem; padding: 0.75rem; font-size: 12px; margin-top: 0.5rem; }
     </style>
 </head>
-<body class="bg-[#F8FAFC]">
+<body>
 
-    <div id="authArea" class="hidden min-h-screen flex items-center justify-center p-6 bg-indigo-600">
-        <div class="bg-white p-10 rounded-[3rem] shadow-2xl w-full max-w-md space-y-4 text-center">
-            <h2 class="text-4xl font-black italic text-indigo-600 mb-6">LinkUp</h2>
-            <input id="authUsername" placeholder="Kullanıcı Adı" class="auth-input hidden">
-            <input id="authEmail" type="email" placeholder="E-posta" class="auth-input">
-            <input id="authPass" type="password" placeholder="Şifre" class="auth-input">
-            <button onclick="authIslem()" id="authBtn" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black text-lg">Giriş Yap</button>
-            <p onclick="authModDegistir()" class="text-xs font-bold text-slate-400 cursor-pointer uppercase mt-4">Kayıt Ol</p>
+    <div id="authArea" class="hidden min-h-screen flex items-center justify-center bg-indigo-600 p-6">
+        <div class="bg-white p-10 rounded-[2.5rem] w-full max-w-md text-center">
+            <h2 class="text-4xl font-black italic text-indigo-600 mb-8">LinkUp</h2>
+            <div class="space-y-3">
+                <input id="authUsername" placeholder="Kullanıcı Adı" class="w-full p-4 bg-slate-100 rounded-2xl outline-none hidden">
+                <input id="authEmail" type="email" placeholder="E-posta" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
+                <input id="authPass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
+                <button onclick="authIslem()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">Giriş Yap</button>
+                <p onclick="authModDegistir()" class="text-xs font-bold text-slate-400 cursor-pointer uppercase">Kayıt Ol</p>
+            </div>
         </div>
     </div>
 
     <div id="mainArea" class="hidden min-h-screen flex flex-col md:flex-row">
-        <aside class="w-full md:w-80 bg-white border-r p-8 flex flex-col">
-            <h1 class="text-3xl font-black text-indigo-600 mb-10 italic">LinkUp</h1>
+        <aside class="w-full md:w-72 bg-white border-r p-6 flex flex-col gap-2">
+            <h1 class="text-2xl font-black text-indigo-600 italic mb-6">LinkUp</h1>
+            <div id="btn-kesfet" onclick="verileriGetir('kesfet')" class="nav-link nav-active">🌍 Keşfet</div>
+            <div id="btn-trend" onclick="verileriGetir('trend')" class="nav-link">🔥 Trendler</div>
+            <div id="btn-notif" onclick="bildirimleriAc()" class="nav-link relative">🔔 Bildirimler <div id="notifDot" class="hidden w-2 h-2 bg-red-500 rounded-full absolute right-2 top-2"></div></div>
+            <div id="btn-listeler" onclick="listelerimEkraniniAc()" class="nav-link">📚 Listelerim</div>
+            <hr class="my-4">
+            <p class="text-[10px] font-black text-slate-400 uppercase ml-3">Kategoriler</p>
+            <div onclick="verileriGetir('kesfet', null, '', 'Eğitim')" class="nav-link">🎓 Eğitim</div>
+            <div onclick="verileriGetir('kesfet', null, '', 'Yazılım')" class="nav-link">💻 Yazılım</div>
+            <div onclick="verileriGetir('kesfet', null, '', 'Tasarım')" class="nav-link">🎨 Tasarım</div>
+            <div onclick="verileriGetir('kesfet', null, '', 'Haber')" class="nav-link">📰 Haber</div>
             
-            <nav class="space-y-2 flex-1">
-                <div id="btn-kesfet" onclick="verileriGetir('kesfet')" class="nav-link nav-active">🌍 Keşfet</div>
-                <div id="btn-trend" onclick="verileriGetir('trend')" class="nav-link">🔥 Trendler</div>
-                <div id="btn-takip" onclick="verileriGetir('takip')" class="nav-link">👥 Akış</div>
-                <div id="btn-listelerim" onclick="listelerimEkraniniAc()" class="nav-link">📚 Listeler</div>
-                <div id="btn-notif" onclick="bildirimleriAc()" class="nav-link relative">
-                    🔔 Bildirimler
-                    <div id="notifDot" class="hidden notif-dot"></div>
-                </div>
-                <hr class="my-4">
-                <div onclick="profilGetir(localStorage.getItem('username'))" class="nav-link text-indigo-600">👤 Profilim</div>
-                <div onclick="cikisYap()" class="nav-link text-red-400">❌ Çıkış</div>
-            </nav>
-            <button onclick="modalAc()" class="mt-8 bg-slate-900 text-white p-5 rounded-2xl font-black shadow-lg">+ YENİ EKLE</button>
+            <button onclick="modalAc()" class="mt-auto bg-slate-900 text-white p-4 rounded-2xl font-black">+ YENİ KISAYOL</button>
         </aside>
 
         <main class="flex-1 p-6 md:p-12 overflow-y-auto">
-            <div class="max-w-3xl mx-auto mb-10">
-                <input type="text" oninput="aramaYap(this.value)" placeholder="Ara..." class="w-full bg-white border border-slate-100 p-4 rounded-2xl shadow-sm outline-none focus:border-indigo-600">
-            </div>
-
-            <div id="notifPanel" class="hidden max-w-2xl mx-auto mb-10 space-y-3">
-                <h3 class="font-black text-slate-800 text-xl mb-4">Bildirimler</h3>
-                <div id="notifList" class="space-y-2"></div>
-            </div>
-
-            <div id="profileHeader" class="hidden max-w-3xl mx-auto mb-10 p-8 bg-white rounded-[2.5rem] border border-slate-100">
-                <div class="flex items-center gap-6">
-                    <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-2xl">L</div>
-                    <div>
-                        <h2 id="profName" class="text-2xl font-black">@username</h2>
-                        <p class="text-xs text-slate-400 font-bold"><span id="profFollowers">0</span> Takipçi</p>
-                    </div>
-                </div>
-                <div id="profLists" class="grid grid-cols-2 gap-3 mt-6"></div>
-            </div>
-
-            <div id="linkFeed" class="max-w-3xl mx-auto space-y-6"></div>
+            <div id="linkFeed" class="max-w-2xl mx-auto space-y-6"></div>
         </main>
     </div>
 
-    <div id="addModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-10 space-y-4">
-            <h3 class="text-xl font-black">Yeni Link</h3>
-            <input id="urlIn" placeholder="URL" class="auth-input">
-            <input id="titleIn" placeholder="Başlık" class="auth-input">
-            <input id="tagsIn" placeholder="Etiketler" class="auth-input">
-            <textarea id="descIn" placeholder="Açıklama" class="auth-input h-20"></textarea>
+    <div id="addModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] p-8 space-y-4">
+            <h3 class="text-xl font-black">Yeni Kısayol Paylaş</h3>
+            <input id="urlIn" placeholder="URL (https://...)" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
+            <input id="titleIn" placeholder="Kısayol Başlığı" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
+            <select id="catIn" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold text-slate-500">
+                <option value="Genel">Kategori Seçin</option>
+                <option value="Eğitim">Eğitim</option>
+                <option value="Yazılım">Yazılım</option>
+                <option value="Tasarım">Tasarım</option>
+                <option value="Haber">Haber</option>
+                <option value="Eğlence">Eğlence</option>
+            </select>
+            <textarea id="descIn" placeholder="Açıklama..." class="w-full p-4 bg-slate-100 rounded-2xl outline-none h-24"></textarea>
             <button onclick="kaydet()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">PAYLAŞ</button>
-            <button onclick="modalKapat()" class="w-full text-slate-400 font-bold">İptal</button>
+            <button onclick="modalKapat()" class="w-full text-slate-400 font-bold">Vazgeç</button>
         </div>
     </div>
 
@@ -89,75 +75,83 @@
     const API_URL = "https://link-depom-sunucu.onrender.com";
     let isLoginMode = true;
 
-    async function checkNotifications() {
-        const res = await fetch(`${API_URL}/notifications`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await res.json();
-        const hasUnread = data.some(n => !n.okundu);
-        document.getElementById('notifDot').classList.toggle('hidden', !hasUnread);
-    }
-
-    async function bildirimleriAc() {
-        document.getElementById('linkFeed').innerHTML = "";
-        document.getElementById('profileHeader').classList.add('hidden');
-        document.getElementById('notifPanel').classList.remove('hidden');
-        
-        const res = await fetch(`${API_URL}/notifications`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await res.json();
-        
-        document.getElementById('notifList').innerHTML = data.map(n => `
-            <div class="p-4 ${n.okundu ? 'bg-white' : 'bg-indigo-50'} rounded-2xl border border-slate-100 flex items-center gap-3">
-                <div class="text-xl">${n.tip === 'beğeni' ? '❤️' : '👥'}</div>
-                <div class="text-sm">
-                    <span class="font-black">@${n.gonderenAd}</span> ${n.mesaj}
-                </div>
-            </div>
-        `).join('') || '<p class="text-slate-400 text-center py-10">Bildirim yok.</p>';
-        
-        // Okundu olarak işaretle
-        fetch(`${API_URL}/notifications/read`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        document.getElementById('notifDot').classList.add('hidden');
-    }
-
-    // Her 30 saniyede bir bildirimleri kontrol et
-    setInterval(() => { if(localStorage.getItem('token')) checkNotifications(); }, 30000);
-
-    // ... (v5'teki verileriGetir, profilGetir, authIslem, kaydet fonksiyonlarını buraya ekle) ...
-    // Hepsini içeren tam script bloğu için:
-    
-    async function verileriGetir(mod, listId = null, query = "") {
-        document.getElementById('notifPanel').classList.add('hidden');
-        document.getElementById('profileHeader').classList.add('hidden');
+    async function verileriGetir(mod, listId = null, q = "", kategori = "") {
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('nav-active'));
-        if(document.getElementById('btn-' + mod)) document.getElementById('btn-' + mod).classList.add('nav-active');
+        if(document.getElementById('btn-'+mod)) document.getElementById('btn-'+mod).classList.add('nav-active');
 
-        const res = await fetch(`${API_URL}/data?mod=${mod}&user=${localStorage.getItem('userId')}&q=${query}${listId ? '&listId='+listId : ''}`);
+        let url = `${API_URL}/data?mod=${mod}&q=${q}&kategori=${kategori}&user=${localStorage.getItem('userId')}`;
+        if(listId) url += `&listId=${listId}`;
+
+        const res = await fetch(url);
         const data = await res.json();
         
         document.getElementById('linkFeed').innerHTML = data.links.map(l => `
-            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                <div class="flex justify-between items-center mb-4">
-                    <span onclick="profilGetir('${l.userName}')" class="text-xs font-black text-indigo-500 cursor-pointer">@${l.userName}</span>
-                    <button onclick="takipEt('${l.userId}')" class="text-[10px] font-bold text-slate-400">+ TAKİP</button>
+            <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-50">
+                <div class="flex justify-between items-start mb-3">
+                    <span class="cat-tag">${l.kategori}</span>
+                    <span class="text-[10px] font-black text-slate-300">@${l.userName}</span>
                 </div>
-                <h4 class="font-extrabold text-slate-800 text-lg">${l.baslik}</h4>
+                <h4 class="text-lg font-extrabold text-slate-800">${l.baslik}</h4>
                 <p class="text-sm text-slate-500 mt-1 mb-4">${l.aciklama || ''}</p>
-                <div class="flex items-center justify-between pt-4 border-t">
-                    <div class="flex gap-4">
-                        <button onclick="likeEt('${l._id}')" class="text-xs font-bold text-slate-400">❤️ <span id="like-${l._id}">${l.beğeniler.length}</span></button>
-                    </div>
-                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black">GİT ↗</button>
+                
+                <div class="flex items-center justify-between pb-4 border-b border-slate-50">
+                    <button onclick="likeEt('${l._id}')" class="text-xs font-bold text-slate-400">❤️ ${l.beğeniSayisi || 0}</button>
+                    <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-5 py-2 rounded-xl text-[10px] font-black">GİT ↗</button>
                 </div>
+
+                <div class="mt-4">
+                    <div id="comments-${l._id}" class="space-y-2 mb-3"></div>
+                    <div class="flex gap-2">
+                        <input id="input-${l._id}" placeholder="Yorum yaz..." class="flex-1 bg-slate-50 p-2 px-4 rounded-xl text-xs outline-none">
+                        <button onclick="yorumYap('${l._id}')" class="bg-slate-100 p-2 px-4 rounded-xl text-[10px] font-black hover:bg-indigo-50">GÖNDER</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        // Her kartın yorumlarını yükle
+        data.links.forEach(l => yorumlariYukle(l._id));
+    }
+
+    async function yorumlariYukle(id) {
+        const res = await fetch(`${API_URL}/comments/${id}`);
+        const data = await res.json();
+        document.getElementById(`comments-${id}`).innerHTML = data.map(c => `
+            <div class="comment-box">
+                <span class="font-black text-indigo-600 text-[10px]">@${c.userName}:</span>
+                <span class="text-slate-600">${c.icerik}</span>
             </div>
         `).join('');
     }
 
+    async function yorumYap(id) {
+        const icerik = document.getElementById(`input-${id}`).value;
+        if(!icerik) return;
+        await fetch(`${API_URL}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ kisayolId: id, icerik })
+        });
+        document.getElementById(`input-${id}`).value = "";
+        yorumlariYukle(id);
+    }
+
+    async function kaydet() {
+        const body = {
+            url: document.getElementById('urlIn').value,
+            baslik: document.getElementById('titleIn').value,
+            kategori: document.getElementById('catIn').value,
+            aciklama: document.getElementById('descIn').value
+        };
+        await fetch(`${API_URL}/data`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify(body)
+        });
+        modalKapat(); verileriGetir('kesfet');
+    }
+
+    // Diğer temel fonksiyonlar (Auth, Takip, Like) v6 ile aynı kalsın...
     async function authIslem() {
         const email = document.getElementById('authEmail').value;
         const password = document.getElementById('authPass').value;
@@ -181,19 +175,15 @@
         if (localStorage.getItem('token')) {
             document.getElementById('authArea').classList.add('hidden');
             document.getElementById('mainArea').classList.remove('hidden');
-            document.getElementById('navUsernameDisplay')?.innerText = "@" + localStorage.getItem('username');
             verileriGetir('kesfet');
-            checkNotifications();
         } else {
             document.getElementById('authArea').classList.remove('hidden');
         }
     }
-
-    // Diğer yardımcılar (v5 ile aynı)
+    
     function authModDegistir() { isLoginMode = !isLoginMode; document.getElementById('authUsername').classList.toggle('hidden'); }
     function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
     function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
-    function cikisYap() { localStorage.clear(); location.reload(); }
     window.onload = kontrol;
 </script>
 </body>

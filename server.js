@@ -23,11 +23,8 @@ const User = mongoose.model('User', {
 });
 
 const Link = mongoose.model('Link', {
-    baslik: String,
-    url: String,
-    aciklama: String, 
-    userId: mongoose.Schema.Types.ObjectId,
-    domain: String,
+    baslik: String, url: String, aciklama: String, 
+    userId: mongoose.Schema.Types.ObjectId, domain: String,
     tarih: { type: Date, default: Date.now }
 });
 

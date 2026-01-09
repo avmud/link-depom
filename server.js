@@ -9,7 +9,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- VERİTABANI ---
 const MONGO_URI = "mongodb+srv://mud:vVY7Eff21UPjBmJC@cluster0.gtyhy6w.mongodb.net/linkup?retryWrites=true&w=majority";
 const SECRET_KEY = "linkup_ozel_anahtar_2026"; 
 
@@ -17,7 +16,6 @@ mongoose.connect(MONGO_URI)
     .then(() => console.log("🚀 Veritabanı Aktif!"))
     .catch(err => console.error("❌ Veritabanı Hatası:", err));
 
-// --- MODELLER ---
 const User = mongoose.model('User', {
     email: { type: String, unique: true, required: true },
     password: { type: String, required: true },
@@ -33,7 +31,6 @@ const Link = mongoose.model('Link', {
     tarih: { type: Date, default: Date.now }
 });
 
-// --- ROTALAR ---
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -61,18 +58,16 @@ app.get('/data', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Hata" }); }
 });
 
-// --- DOSYA SUNUMU ---
 app.use(express.static(__dirname));
 
 app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-app.get('*', (req, res) => {  // Burası 71. satır civarı
+app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// DOĞRU PORT AYARI
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
     console.log(`Sunucu ${PORT} portunda hazır!`);

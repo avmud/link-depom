@@ -9,7 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- VERİTABANI BAĞLANTISI ---
+// --- VERİTABANI ---
 const MONGO_URI = "mongodb+srv://mud:vVY7Eff21UPjBmJC@cluster0.gtyhy6w.mongodb.net/linkup?retryWrites=true&w=majority";
 const SECRET_KEY = "linkup_ozel_anahtar_2026"; 
 
@@ -33,7 +33,7 @@ const Link = mongoose.model('Link', {
     tarih: { type: Date, default: Date.now }
 });
 
-// --- ROTALAR ---
+// --- API ROTALARI ---
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -64,13 +64,18 @@ app.get('/data', async (req, res) => {
 // --- DOSYA SUNUMU ---
 app.use(express.static(__dirname));
 
+// Google doğrulama dosyası
 app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
+// Ana sayfa
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// PORT AYARI
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda hazır!`));
+app.listen(PORT, () => {
+    console.log(`Sunucu ${PORT} portunda hazır!`);
+});

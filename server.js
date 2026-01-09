@@ -1,61 +1,61 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const axios = require('axios'); // Yeni
+const cheerio = require('cheerio'); // Yeni
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// --- MONGODB BAĞLANTISI ---
 const MONGO_URI = "mongodb+srv://mud:vVY7Eff21UPjBmJC@cluster0.gtyhy6w.mongodb.net/linkup?retryWrites=true&w=majority";
+mongoose.connect(MONGO_URI);
 
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("🚀 Veritabanı Aktif!"))
-    .catch(err => console.error("❌ Hata:", err));
-
-// --- VERİ MODELLERİ ---
 const Link = mongoose.model('Link', {
     baslik: String, url: String, aciklama: String, 
-    listeler: [String], domain: String, likes: { type: Number, default: 0 },
-    tarih: { type: Date, default: Date.now }
+    listeler: [String], domain: String, tarih: { type: Date, default: Date.now }
 });
 
-const Platform = mongoose.model('Platform', {
-    domain: String, count: { type: Number, default: 1 }, isVerified: { type: Boolean, default: false }
+// 1. ADIM: SITEMAP (Google Botları İçin)
+app.get('/sitemap.xml', async (req, res) => {
+    const links = await Link.find();
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+        <url><loc>https://seninsiten.onrender.com/</loc></url>`;
+    links.forEach(l => {
+        xml += `<url><loc>https://seninsiten.onrender.com/link/${l._id}</loc></url>`;
+    });
+    xml += `</urlset>`;
+    res.header('Content-Type', 'application/xml');
+    res.send(xml);
 });
 
-// --- API ROTALARI ---
-app.get('/data', async (req, res) => {
+// 2. ADIM: OTOMATİK BİLGİ ÇEKME (Linkin başlığını ve açıklamasını bulur)
+app.post('/fetch-info', async (req, res) => {
     try {
-        const links = await Link.find().sort({ tarih: -1 });
-        const platforms = await Platform.find({ isVerified: true });
-        res.json({ 
-            links, platforms,
-            user: { username: "Uğur", stats: { totalLinks: links.length, totalLists: 32, linkLikes: 512, followers: 8 } },
-            listeler: [
-                { ad: "YouTube Listelerim", parent: null },
-                { ad: "Instagram Listelerim", parent: null },
-                { ad: "Ders Videolarım", parent: null },
-                { ad: "Fransızca Şarkılar", parent: "YouTube Listelerim" },
-                { ad: "Müslüm Gürses", parent: "YouTube Listelerim" }
-            ]
-        });
-    } catch (e) { res.status(500).json(e); }
+        const { url } = req.body;
+        const response = await axios.get(url);
+        const $ = cheerio.load(response.data);
+        const info = {
+            title: $('title').text() || "Başlık bulunamadı",
+            description: $('meta[name="description"]').attr('content') || "Açıklama bulunamadı"
+        };
+        res.json(info);
+    } catch (e) { res.status(500).send("Bilgi çekilemedi"); }
 });
 
+// Link Kaydetme Rotası (Aynı kalıyor)
 app.post('/kaydet', async (req, res) => {
     const { url, baslik, aciklama, secilenListeler } = req.body;
     const domain = new URL(url).hostname.replace('www.', '');
     const yeniLink = new Link({ baslik, url, aciklama, listeler: secilenListeler, domain });
     await yeniLink.save();
-
-    let plat = await Platform.findOne({ domain });
-    if (plat) {
-        plat.count += 1;
-        if (plat.count >= 100) plat.isVerified = true;
-        await plat.save();
-    } else { await Platform.create({ domain }); }
     res.json({ success: true });
 });
 
-app.listen(process.env.PORT || 3000, () => console.log("Backend Hazır!"));
+app.get('/data', async (req, res) => {
+    const links = await Link.find().sort({ tarih: -1 });
+    res.json({ links, user: { username: "Uğur", stats: { totalLinks: links.length, totalLists: 32 } } });
+});
+
+app.listen(process.env.PORT || 3000);

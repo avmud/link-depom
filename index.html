@@ -3,33 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp | Profesyonel Arşivim</title>
-    <meta name="description" content="YouTube, Instagram ve eğitim linklerinizi tek bir yerde toplayın.">
+    <title>LinkUp | Profesyonel Arşiv & Sosyal Kütüphane</title>
+    
+    <meta name="description" content="En sevdiğiniz içerikleri, eğitim videolarını ve sosyal medya linklerini profesyonelce arşivleyin.">
+    <meta name="keywords" content="link arşivi, sosyal kütüphane, link kaydetme, seo link, otomatik arşiv">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .folder-active { background: #4f46e5 !important; color: white !important; }
-        .sub-folder { margin-left: 20px; border-left: 2px solid #e2e8f0; padding-left: 10px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .folder-active { @apply bg-indigo-600 text-white !important; }
+        .sub-folder { @apply ml-6 border-l-2 border-slate-100 pl-3 mt-1; }
+        .card-hover:hover { transform: translateY(-3px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+        .loader { border-top-color: #4f46e5; animation: spinner 0.6s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans">
-    <div class="flex h-screen">
-        <aside class="w-72 bg-white border-r p-6 flex flex-col">
-            <h1 class="text-2xl font-black text-indigo-600 mb-8 italic">LinkUp</h1>
-            <div id="treeView" class="flex-1 overflow-y-auto space-y-2 text-sm font-semibold text-slate-600">
-                </div>
-            <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="mt-4 bg-indigo-600 text-white p-4 rounded-xl font-bold">+ YENİ EKLE</button>
+<body class="bg-[#F9FAFB] text-slate-800">
+
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-72 bg-white border-r border-slate-200 p-8 flex flex-col">
+            <h1 class="text-3xl font-black text-indigo-600 mb-10 italic tracking-tighter">LinkUp</h1>
+            
+            <nav id="treeView" class="flex-1 overflow-y-auto space-y-2 pr-2 text-[13px] font-bold text-slate-500 uppercase tracking-tight">
+                </nav>
+
+            <button onclick="modalAc()" class="mt-8 bg-indigo-600 text-white p-4 rounded-2xl font-black shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all">
+                + YENİ EKLE
+            </button>
         </aside>
 
         <main class="flex-1 flex flex-col overflow-hidden">
-            <header class="h-20 bg-white border-b px-10 flex justify-between items-center">
-                <input type="text" placeholder="Arşivinde ara..." class="bg-slate-100 p-3 rounded-xl w-96 outline-none text-sm">
-                <div id="userStats" class="flex gap-6 text-xs font-bold text-slate-400 uppercase">
+            <header class="h-20 bg-white border-b border-slate-100 px-10 flex justify-between items-center shrink-0">
+                <input type="text" placeholder="Arşivinde akıllıca ara..." class="w-96 p-3 bg-slate-50 rounded-xl outline-none text-sm border border-transparent focus:border-indigo-100 transition-all">
+                
+                <div id="userStats" class="flex gap-8 text-[10px] font-black text-slate-400 tracking-widest uppercase">
                     </div>
             </header>
 
-            <div class="p-10 overflow-y-auto flex-1 space-y-6">
-                <div class="bg-indigo-50 border-2 border-dashed border-indigo-200 p-4 text-center rounded-2xl text-indigo-400 text-xs font-bold uppercase tracking-widest">
-                    Google AdSense Reklam Alanı (Onay Bekleniyor)
+            <div class="flex-1 overflow-y-auto p-10 space-y-8">
+                <div class="w-full p-6 bg-white rounded-3xl border-2 border-dashed border-slate-100 flex items-center justify-center text-slate-300 font-bold text-xs uppercase tracking-[0.2em]">
+                    Google AdSense Reklam Alanı
                 </div>
 
                 <div id="linkFeed" class="grid gap-4">
@@ -38,15 +52,27 @@
         </main>
     </div>
 
-    <div id="addModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-md space-y-4">
-            <h2 class="text-xl font-bold">Yeni Link Ekle</h2>
-            <input id="urlIn" placeholder="URL" class="w-full p-3 bg-slate-100 rounded-xl outline-none">
-            <input id="titleIn" placeholder="Başlık" class="w-full p-3 bg-slate-100 rounded-xl outline-none">
-            <textarea id="descIn" placeholder="Açıklama (SEO için önemli)" class="w-full p-3 bg-slate-100 rounded-xl h-24 outline-none"></textarea>
-            <div class="flex gap-2">
-                <button onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 p-3 font-bold text-slate-400">İPTAL</button>
-                <button onclick="kaydet()" class="flex-1 p-3 bg-indigo-600 text-white rounded-xl font-bold">KAYDET</button>
+    <div id="addModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-xl rounded-[2.5rem] p-10 shadow-2xl space-y-6">
+            <div class="flex justify-between items-center">
+                <h3 class="text-2xl font-black italic">Hızlı Arşivle</h3>
+                <button onclick="modalKapat()" class="text-slate-300 hover:text-slate-900 text-2xl font-black">×</button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="relative">
+                    <input id="urlIn" placeholder="Link (Yapıştırdığın an bilgiler çekilir)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 transition-all text-sm font-medium">
+                    <div id="infoLoader" class="hidden absolute right-4 top-4 loader ease-linear rounded-full border-2 border-t-2 border-gray-200 h-6 w-6"></div>
+                </div>
+                
+                <input id="titleIn" placeholder="Başlık" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 transition-all text-sm font-medium">
+                
+                <textarea id="descIn" placeholder="Editör Notu & SEO Açıklaması" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-2 border-transparent focus:border-indigo-500 transition-all text-sm font-medium h-24 resize-none"></textarea>
+            </div>
+
+            <div class="flex gap-4 pt-4">
+                <button onclick="modalKapat()" class="flex-1 p-4 font-bold text-slate-400">İPTAL</button>
+                <button onclick="kaydet()" class="flex-[2] p-4 bg-indigo-600 text-white rounded-2xl font-black shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all">ARŞİVE GÖNDER</button>
             </div>
         </div>
     </div>
@@ -55,24 +81,49 @@
     const API_URL = "https://link-depom-sunucu.onrender.com";
     let currentMode = "ana";
 
+    // 2. ADIM: OTOMATİK VERİ ÇEKME (SCRAPER BAĞLANTISI)
+    document.getElementById('urlIn').addEventListener('blur', async (e) => {
+        const url = e.target.value;
+        if (url.length < 5 || !url.startsWith('http')) return;
+
+        document.getElementById('infoLoader').classList.remove('hidden');
+        document.getElementById('titleIn').placeholder = "🤖 Bilgiler çekiliyor...";
+
+        try {
+            const res = await fetch(`${API_URL}/fetch-info`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ url })
+            });
+            const info = await res.json();
+            
+            document.getElementById('titleIn').value = info.title;
+            document.getElementById('descIn').value = info.description;
+        } catch (e) {
+            console.error("Bilgi çekilemedi");
+        } finally {
+            document.getElementById('infoLoader').classList.add('hidden');
+            document.getElementById('titleIn').placeholder = "Başlık";
+        }
+    });
+
     async function verileriGetir() {
         const res = await fetch(`${API_URL}/data`);
         const data = await res.json();
         
-        // İstatistikler (Merhaba Uğur Paneli)
+        // İstatistikler
         document.getElementById('userStats').innerHTML = `
-            <span>LİSTELER: ${data.user.stats.totalLists}</span>
-            <span>KISAYOLLAR: ${data.user.stats.totalLinks}</span>
-            <span>BEĞENİ: ${data.user.stats.linkLikes}</span>
+            <span>BAĞLANTI: ${data.user.stats.totalLinks}</span>
+            <span>LİSTE: ${data.user.stats.totalLists}</span>
         `;
 
-        // Klasörleme
+        // Sol Menü Klasörleri
         const tree = data.listeler.filter(l => !l.parent).map(p => `
-            <div>
-                <div onclick="renderView('list-${p.ad}')" class="p-2 cursor-pointer hover:bg-slate-100 rounded-lg">📂 ${p.ad}</div>
+            <div class="mb-2">
+                <div onclick="renderView('list-${p.ad}')" class="p-3 rounded-xl cursor-pointer hover:bg-slate-50 ${currentMode === 'list-'+p.ad ? 'folder-active' : ''}">📂 ${p.ad}</div>
                 <div class="sub-folder">
                     ${data.listeler.filter(s => s.parent === p.ad).map(s => `
-                        <div onclick="renderView('list-${s.ad}')" class="p-1 cursor-pointer hover:text-indigo-600">📑 ${s.ad}</div>
+                        <div onclick="renderView('list-${s.ad}')" class="p-2 cursor-pointer hover:text-indigo-600 ${currentMode === 'list-'+s.ad ? 'text-indigo-600' : ''}">📑 ${s.ad}</div>
                     `).join('')}
                 </div>
             </div>
@@ -83,16 +134,17 @@
         let links = data.links;
         if(currentMode.startsWith('list-')) {
             const listName = currentMode.replace('list-', '');
-            links = data.links.filter(l => l.listeler.includes(listName));
+            links = data.links.filter(l => l.listeler && l.listeler.includes(listName));
         }
 
         document.getElementById('linkFeed').innerHTML = links.map(l => `
-            <div class="bg-white p-6 rounded-3xl border flex justify-between items-center group hover:border-indigo-500 transition-all">
-                <div>
-                    <h3 class="font-bold text-slate-800">${l.baslik}</h3>
-                    <p class="text-xs text-slate-400 italic">${l.aciklama || 'Açıklama yok'}</p>
+            <div class="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center gap-6 card-hover transition-all">
+                <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl">🔗</div>
+                <div class="flex-1">
+                    <h4 class="font-black text-slate-800 mb-1">${l.baslik}</h4>
+                    <p class="text-xs text-slate-400 italic line-clamp-1">${l.aciklama || 'Harika bir keşif...'}</p>
                 </div>
-                <button onclick="window.open('${l.url}')" class="bg-slate-900 text-white px-6 py-2 rounded-xl text-xs font-bold hover:bg-indigo-600">GİT ↗</button>
+                <button onclick="window.open('${l.url}')" class="px-8 py-3 bg-slate-900 text-white rounded-2xl text-[11px] font-black hover:bg-indigo-600 shadow-lg shadow-slate-200">GİT ↗</button>
             </div>
         `).join('');
     }
@@ -102,17 +154,19 @@
             url: document.getElementById('urlIn').value,
             baslik: document.getElementById('titleIn').value,
             aciklama: document.getElementById('descIn').value,
-            secilenListeler: ["YouTube Listelerim"] // Şimdilik varsayılan
+            secilenListeler: ["YouTube Listelerim"] // Varsayılan
         };
         await fetch(`${API_URL}/kaydet`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
-        document.getElementById('addModal').classList.add('hidden');
+        modalKapat();
         verileriGetir();
     }
 
+    function modalAc() { document.getElementById('addModal').classList.remove('hidden'); }
+    function modalKapat() { document.getElementById('addModal').classList.add('hidden'); }
     function renderView(mode) { currentMode = mode; verileriGetir(); }
     window.onload = verileriGetir;
 </script>

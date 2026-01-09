@@ -30,7 +30,7 @@ const Link = mongoose.model('Link', {
     tarih: { type: Date, default: Date.now }
 });
 
-// --- ROTALAR ---
+// --- API ROTALARI ---
 app.post('/auth/register', async (req, res) => {
     try {
         const { email, password, username } = req.body;
@@ -58,19 +58,22 @@ app.get('/data', async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Hata" }); }
 });
 
-// --- DOSYA SUNUMU (FIXED) ---
+// --- DOSYA SUNUMU (HATAYI BİTİREN KISIM) ---
+// Statik dosyaları sun
 app.use(express.static(__dirname));
 
+// Google onay dosyasını direkt sun
 app.get('/google2907470659972352.html', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'google2907470659972352.html'));
+    res.sendFile('google2907470659972352.html', { root: __dirname });
 });
 
-app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'index.html'));
+// Ana sayfa rotası (Hata veren '*' yerine '/' kullanıyoruz)
+app.get('/', (req, res) => {
+    res.sendFile('index.html', { root: __dirname });
 });
 
-// --- SUNUCU BAŞLATMA (PORT FIX) ---
+// --- SUNUCU BAŞLATMA ---
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Sunucu ${PORT} portunda dış dünyaya açıldı!`);
+    console.log(`🚀 Sunucu ${PORT} portunda hazır!`);
 });

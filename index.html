@@ -3,42 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp | Sosyal Ağ</title>
+    <title>LinkUp | Sosyal Akış</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; transition: 0.3s; }
+        .comment-box { border-left: 3px solid #e2e8f0; padding-left: 1rem; margin-top: 0.5rem; }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
 
     <div id="authArea" class="hidden min-h-screen flex items-center justify-center bg-indigo-600">
-        <div class="bg-white dark:bg-slate-900 p-10 rounded-[3rem] w-full max-w-md shadow-2xl">
-            <h2 class="text-4xl font-black italic text-indigo-600 mb-8 text-center">LinkUp</h2>
+        <div class="bg-white dark:bg-slate-900 p-10 rounded-[3rem] w-full max-w-md shadow-2xl text-center">
+            <h2 class="text-4xl font-black italic text-indigo-600 mb-8">LinkUp</h2>
             <div class="space-y-3">
                 <input id="authEmail" placeholder="E-posta" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none border-2 focus:border-indigo-500">
                 <input id="authPass" type="password" placeholder="Şifre" class="w-full p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl outline-none border-2 focus:border-indigo-500">
-                <button onclick="authIslem()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black">BAĞLAN</button>
+                <button onclick="authIslem()" class="w-full p-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest">Giriş Yap</button>
             </div>
         </div>
     </div>
 
     <div id="mainArea" class="hidden min-h-screen flex flex-col lg:flex-row">
-        <aside class="w-full lg:w-72 bg-white dark:bg-slate-900 border-r dark:border-slate-800 p-6">
+        <aside class="w-full lg:w-72 bg-white dark:bg-slate-900 border-r dark:border-slate-800 p-6 flex flex-col">
             <h1 class="text-2xl font-black text-indigo-600 mb-10 italic">LinkUp</h1>
-            <div class="mb-6">
-                <input id="searchIn" onkeyup="verileriGetir(this.value)" placeholder="Akıllı Arama..." class="w-full p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs outline-none focus:ring-2 ring-indigo-500">
-            </div>
-            <nav class="space-y-2">
-                <div onclick="verileriGetir()" class="p-3 font-bold cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition">🏠 Akış</div>
+            <nav class="space-y-2 flex-1">
+                <div onclick="verileriGetir(false)" id="btn-global" class="p-3 font-extrabold cursor-pointer rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600">🌍 Keşfet</div>
+                <div onclick="verileriGetir(true)" id="btn-follow" class="p-3 font-extrabold cursor-pointer rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">👥 Takip Ettiklerim</div>
                 <div onclick="cikisYap()" class="p-3 font-bold text-red-400 cursor-pointer">🚪 Çıkış</div>
             </nav>
-            <button onclick="modalAc()" class="w-full mt-10 bg-indigo-600 text-white p-4 rounded-2xl font-black shadow-lg shadow-indigo-200 dark:shadow-none">+ PAYLAŞ</button>
+            <button onclick="modalAc()" class="w-full mt-10 bg-indigo-600 text-white p-4 rounded-2xl font-black shadow-lg">+ YENİ PAYLAŞIM</button>
         </aside>
 
-        <main class="flex-1 p-4 lg:p-10">
-            <div id="contentArea" class="max-w-2xl mx-auto space-y-6"></div>
+        <main class="flex-1 p-4 lg:p-10 overflow-y-auto">
+            <div id="contentArea" class="max-w-2xl mx-auto space-y-8"></div>
         </main>
     </div>
 
@@ -46,10 +45,10 @@
     const API_URL = "https://link-depom-sunucu.onrender.com";
     let myFollowing = JSON.parse(localStorage.getItem('following') || '[]');
 
-    async function verileriGetir(q = "") {
-        const res = await fetch(`${API_URL}/data?q=${q}`);
+    async function verileriGetir(followOnly = false) {
+        const userId = localStorage.getItem('userId');
+        const res = await fetch(`${API_URL}/data?followOnly=${followOnly}&userId=${userId}`);
         const data = await res.json();
-        const myId = localStorage.getItem('userId');
         
         document.getElementById('contentArea').innerHTML = data.links.map(l => `
             <div class="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm">
@@ -58,22 +57,52 @@
                         <img src="${l.userAvatar}" class="w-8 h-8 rounded-xl">
                         <span class="text-xs font-black">@${l.userName}</span>
                     </div>
-                    ${l.userId !== myId ? `
-                        <button onclick="takipEt('${l.userId}')" class="text-[10px] font-black uppercase px-4 py-1.5 rounded-full border-2 ${myFollowing.includes(l.userId) ? 'border-slate-200 text-slate-400' : 'border-indigo-600 text-indigo-600'}">
+                    ${l.userId !== userId ? `
+                        <button onclick="takipEt('${l.userId}')" class="text-[10px] font-black border-2 px-4 py-1.5 rounded-full ${myFollowing.includes(l.userId) ? 'text-slate-400' : 'border-indigo-600 text-indigo-600'}">
                             ${myFollowing.includes(l.userId) ? 'Takip Ediliyor' : 'Takip Et'}
                         </button>
                     ` : ''}
                 </div>
-                <h4 class="text-lg font-extrabold leading-tight">${l.baslik}</h4>
-                <div class="flex gap-2 mt-3">
-                    ${l.etiketler.map(t => `<span class="text-[9px] font-bold text-indigo-400 uppercase">#${t}</span>`).join('')}
+                <h4 class="text-lg font-extrabold mb-4">${l.baslik}</h4>
+                <div class="flex items-center justify-between mb-6">
+                    <button onclick="window.open('${l.url}')" class="bg-slate-900 text-white px-6 py-2 rounded-xl text-[10px] font-black">Linke Git ↗</button>
+                    <button onclick="yorumlarıAc('${l._id}')" class="text-xs font-bold text-indigo-500">💬 Yorumlar</button>
                 </div>
-                <div class="flex items-center justify-between mt-5 pt-4 border-t dark:border-slate-800">
-                    <span class="text-[10px] text-slate-400 font-bold uppercase">${new Date(l.tarih).toLocaleDateString()}</span>
-                    <button onclick="window.open('${l.url}')" class="bg-slate-900 dark:bg-indigo-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black italic">GİT ↗</button>
+                <div id="comments-${l._id}" class="hidden space-y-3 pt-4 border-t dark:border-slate-800">
+                    <div id="list-${l._id}" class="space-y-3"></div>
+                    <div class="flex gap-2 mt-4">
+                        <input id="input-${l._id}" placeholder="Yorum yaz..." class="flex-1 p-3 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs outline-none">
+                        <button onclick="yorumGonder('${l._id}')" class="bg-indigo-600 text-white px-4 rounded-xl text-[10px] font-bold">GÖNDER</button>
+                    </div>
                 </div>
             </div>
         `).join('');
+    }
+
+    async function yorumlarıAc(linkId) {
+        const box = document.getElementById(`comments-${linkId}`);
+        box.classList.toggle('hidden');
+        if(!box.classList.contains('hidden')) {
+            const res = await fetch(`${API_URL}/comments/${linkId}`);
+            const comments = await res.json();
+            document.getElementById(`list-${linkId}`).innerHTML = comments.map(c => `
+                <div class="comment-box text-xs">
+                    <span class="font-black">@${c.userName}:</span> ${c.icerik}
+                </div>
+            `).join('');
+        }
+    }
+
+    async function yorumGonder(linkId) {
+        const icerik = document.getElementById(`input-${linkId}`).value;
+        if(!icerik) return;
+        await fetch(`${API_URL}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+            body: JSON.stringify({ linkId, icerik })
+        });
+        document.getElementById(`input-${linkId}`).value = "";
+        yorumlarıAc(linkId); // Yenile
     }
 
     async function takipEt(userId) {
@@ -82,11 +111,9 @@
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
         const data = await res.json();
-        if(data.success) {
-            myFollowing = data.following;
-            localStorage.setItem('following', JSON.stringify(myFollowing));
-            verileriGetir(document.getElementById('searchIn').value);
-        }
+        myFollowing = data.following;
+        localStorage.setItem('following', JSON.stringify(myFollowing));
+        verileriGetir();
     }
 
     async function authIslem() {
@@ -101,7 +128,6 @@
         if(data.token) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('userId', data.userId);
-            localStorage.setItem('username', data.username);
             localStorage.setItem('following', JSON.stringify(data.following || []));
             location.reload();
         }
@@ -117,7 +143,7 @@
     }
     
     function cikisYap() { localStorage.clear(); location.reload(); }
-    function modalAc() { alert("Paylaşım modülü aktif"); }
+    function modalAc() { alert("Paylaşım penceresi v11'deki ile aynıdır, eklenebilir."); }
 </script>
 </body>
 </html>

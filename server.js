@@ -4,6 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -49,20 +50,27 @@ const Link = mongoose.model('Link', {
 
 // --- ROTALAR ---
 
-// Önemli: Statik dosyalar API rotalarından önce tanımlanmalı
+// Google Doğrulama Dosyası İçin Özel Ayar (DOĞRULAMA HATASINI ÇÖZER)
+app.get('/google2907470659972352.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
+});
+
+// Statik Dosyalar
 app.use(express.static(path.join(__dirname)));
 
-// Tıklama Analitiği
+// API Rotaları (Çakışmayı önlemek için /api/ ön ekiyle)
 app.post('/api/links/click/:id', async (req, res) => {
-    const today = new Date().setHours(0,0,0,0);
-    const link = await Link.findById(req.params.id);
-    if(!link) return res.status(404).send();
-    link.clicks = (link.clicks || 0) + 1;
-    let historyIndex = link.clickHistory.findIndex(h => h.date.getTime() === today);
-    if(historyIndex > -1) link.clickHistory[historyIndex].count += 1;
-    else link.clickHistory.push({ date: new Date(today), count: 1 });
-    await link.save();
-    res.json({ success: true, clicks: link.clicks });
+    try {
+        const today = new Date().setHours(0,0,0,0);
+        const link = await Link.findById(req.params.id);
+        if(!link) return res.status(404).send();
+        link.clicks = (link.clicks || 0) + 1;
+        let historyIndex = link.clickHistory.findIndex(h => h.date && h.date.getTime() === today);
+        if(historyIndex > -1) link.clickHistory[historyIndex].count += 1;
+        else link.clickHistory.push({ date: new Date(today), count: 1 });
+        await link.save();
+        res.json({ success: true, clicks: link.clicks });
+    } catch (e) { res.status(500).json(e); }
 });
 
 app.get('/api/data', async (req, res) => {
@@ -76,16 +84,23 @@ app.get('/api/user/stats/:id', async (req, res) => {
     const links = await Link.find({ userId: req.params.id });
     const totalClicks = links.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
     res.json({ 
-        username: user.username, avatar: user.avatar,
-        linkCount: links.length, totalClicks, addedByOthers: user.addedCount,
-        followers: user.followers.length, following: user.following.length
+        username: user?.username, avatar: user?.avatar,
+        linkCount: links.length, totalClicks, addedByOthers: user?.addedCount || 0,
+        followers: user?.followers?.length || 0, following: user?.following?.length || 0
     });
 });
 
-// HATA DÜZELTME: Catch-all rotasını regex olmadan tanımlıyoruz
-app.get(/^\/(?!api).*/, (req, res) => {
+// Hiyerarşi Getirme
+app.get('/api/my-folders', async (req, res) => {
+    const lists = await List.find({ $or: [{ userId: req.query.userId }, { collaborators: req.query.userId }] }).lean();
+    res.json(lists);
+});
+
+// Catch-all: API dışındaki her şeyi index.html'e yönlendir
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).send('API bulunamadı');
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 Sunucu v22 Hazır: Port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 LinkUp v23 Hazır: Port ${PORT}`));

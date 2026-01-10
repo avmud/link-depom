@@ -12,7 +12,7 @@ app.use(express.json({ limit: '10mb' }));
 const MONGO_URI = "mongodb+srv://mud:vVY7Eff21UPjBmJC@cluster0.gtyhy6w.mongodb.net/linkup?retryWrites=true&w=majority";
 const SECRET_KEY = "linkup_ozel_anahtar_2026"; 
 
-mongoose.connect(MONGO_URI).then(() => console.log("✅ MongoDB Bağlandı - LinkUp v20"));
+mongoose.connect(MONGO_URI);
 
 // --- MODELLER ---
 const User = mongoose.model('User', {
@@ -41,92 +41,77 @@ const Link = mongoose.model('Link', {
     listId: { type: mongoose.Schema.Types.ObjectId, ref: 'List' },
     userId: mongoose.Schema.Types.ObjectId, userName: String,
     aiSummary: String,
+    clicks: { type: Number, default: 0 }, // Tıklama Sayısı
+    clickHistory: [{ date: Date, count: Number }], // Grafik için geçmiş
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     tarih: { type: Date, default: Date.now }
 });
 
+const Report = mongoose.model('Report', { targetId: String, reason: String });
+
 // --- ROTALAR ---
 
-// 1. Ana Sayfa ve Statik Dosyalar (HATA ÇÖZÜMÜ)
 app.use(express.static(__dirname));
 
-// 2. Auth Sistemleri
-app.post('/auth/register', async (req, res) => {
-    const hashed = await bcrypt.hash(req.body.password, 10);
-    const user = new User({...req.body, password: hashed});
-    await user.save();
-    res.json({ success: true });
+// 1. Tıklama Sayacı (Analitik)
+app.post('/links/click/:id', async (req, res) => {
+    const today = new Date().setHours(0,0,0,0);
+    const link = await Link.findById(req.params.id);
+    link.clicks += 1;
+    
+    // Günlük geçmişi güncelle
+    let historyIndex = link.clickHistory.findIndex(h => h.date.getTime() === today);
+    if(historyIndex > -1) link.clickHistory[historyIndex].count += 1;
+    else link.clickHistory.push({ date: today, count: 1 });
+    
+    await link.save();
+    res.json({ success: true, clicks: link.clicks });
 });
 
+// 2. Auth
 app.post('/auth/login', async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
-    if (!user || !(await bcrypt.compare(req.body.password, user.password))) 
-        return res.status(401).json({ error: "Hatalı giriş" });
+    if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).json({ error: "Hata" });
     const token = jwt.sign({ userId: user._id }, SECRET_KEY);
     res.json({ token, userId: user._id, username: user.username, avatar: user.avatar });
 });
 
-// 3. AI Özetleme
-app.post('/links/summarize', async (req, res) => {
-    const link = await Link.findById(req.body.linkId);
-    if (!link.aiSummary) {
-        link.aiSummary = `AI Analizi (${link.url}): Bu içerik kullanıcı için otomatik olarak özetlenmiştir.`;
-        await link.save();
-    }
-    res.json({ summary: link.aiSummary });
-});
-
-// 4. Veri ve Sonsuz Akış
+// 3. Veri Akışı (Sonsuz Kaydırma)
 app.get('/data', async (req, res) => {
     const { page = 1 } = req.query;
     const links = await Link.find().sort({ tarih: -1 }).skip((page - 1) * 10).limit(10).lean();
     res.json(links);
 });
 
-// 5. Klasör ve Takım Çalışması
+// 4. Klasör ve Hiyerarşi
 app.get('/my-folders', async (req, res) => {
-    const lists = await List.find({ 
-        $or: [{ userId: req.query.userId }, { collaborators: req.query.userId }] 
-    }).lean();
+    const lists = await List.find({ $or: [{ userId: req.query.userId }, { collaborators: req.query.userId }] }).lean();
     res.json(lists);
 });
 
-app.post('/lists/add-collaborator', async (req, res) => {
-    const user = await User.findOne({ username: req.body.collaboratorUsername });
-    if (!user) return res.status(404).json({ error: "Kullanıcı bulunamadı" });
-    await List.findByIdAndUpdate(req.body.listId, { $addToSet: { collaborators: user._id } });
-    res.json({ success: true });
+// 5. AI ve Diğer İşlemler
+app.post('/links/summarize', async (req, res) => {
+    const link = await Link.findById(req.body.linkId);
+    if (!link.aiSummary) {
+        link.aiSummary = "AI tarafından oluşturulan içerik özeti burada yer alır.";
+        await link.save();
+    }
+    res.json({ summary: link.aiSummary });
 });
 
-// 6. Profil ve İstatistik
 app.get('/user/stats/:id', async (req, res) => {
     const uid = req.params.id;
     const user = await User.findById(uid);
-    const linkCount = await Link.countDocuments({ userId: uid });
-    const listCount = await List.countDocuments({ userId: uid });
+    const links = await Link.find({ userId: uid });
+    const totalClicks = links.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
     res.json({ 
         username: user.username, avatar: user.avatar,
-        linkCount, listCount, addedByOthers: user.addedCount,
-        following: user.following.length, followers: user.followers.length
+        linkCount: links.length, totalClicks, addedByOthers: user.addedCount,
+        followers: user.followers.length
     });
 });
 
-app.post('/user/update-avatar', async (req, res) => {
-    await User.findByIdAndUpdate(req.body.userId, { avatar: req.body.avatar });
-    res.json({ success: true });
-});
-
-// 7. Silme ve İşlemler
-app.delete('/delete/:type/:id', async (req, res) => {
-    if(req.params.type === 'link') await Link.findByIdAndDelete(req.params.id);
-    else await List.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-});
-
-// HER ŞEYİ ANA SAYFAYA YÖNLENDİR
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 LinkUp v20 aktif port: ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 LinkUp v21: Port ${PORT}`));

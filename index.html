@@ -2,29 +2,24 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkUp v20 | Ultimate</title>
+    <title>LinkUp v21 | Analitik</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .folder-tree { margin-left: 1.2rem; border-left: 2px solid #f1f5f9; }
-        .ai-glow { animation: glow 2s infinite alternate; }
-        @keyframes glow { from { box-shadow: 0 0 5px #6366f1; } to { box-shadow: 0 0 15px #a855f7; } }
+        .folder-tree { margin-left: 1.2rem; border-left: 2px solid #e2e8f0; }
+        .glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="bg-slate-50 flex h-screen overflow-hidden text-slate-900">
 
     <aside class="w-80 bg-white border-r flex flex-col p-6 overflow-y-auto">
         <h1 class="text-3xl font-black text-indigo-600 italic mb-10 tracking-tighter">LinkUp</h1>
-        
-        <div id="folderNav" class="space-y-1 flex-1 text-sm font-bold text-slate-600">
-            </div>
-
+        <div id="folderNav" class="space-y-1 flex-1 text-sm font-bold"></div>
         <div class="mt-6 pt-6 border-t space-y-2">
-            <button onclick="profilGoster()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold">👤 Profil & İstatistikler</button>
-            <button onclick="window.location.reload()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold">🌍 Global Akış</button>
-            <button onclick="cikis()" class="w-full text-left p-3 text-red-500 font-bold">🚪 Çıkış</button>
+            <button onclick="profilGoster()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold italic">👤 Profil & Analiz</button>
+            <button onclick="window.location.reload()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold italic">🌍 Keşfet</button>
         </div>
     </aside>
 
@@ -35,102 +30,83 @@
 
 <script>
     let page = 1;
-    const API = ""; // Aynı sunucu olduğu için boş
     const myId = localStorage.getItem('userId');
 
-    // AI Özetleme
-    async function aiOzetle(linkId, btn) {
-        btn.innerHTML = "🌀 Analiz...";
-        const res = await fetch('/links/summarize', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ linkId })
-        });
-        const data = await res.json();
-        alert("AI Özeti: " + data.summary);
-        btn.innerHTML = "✨ AI Özeti";
+    // Tıklama Kaydet ve Git
+    async function git(linkId, url) {
+        await fetch(`/links/click/${linkId}`, { method: 'POST' });
+        window.open(url, '_blank');
     }
 
-    // Link Kartı Render
     function renderLink(l) {
-        const card = document.createElement('div');
-        card.className = "bg-white p-6 rounded-[2.5rem] border shadow-sm flex flex-col gap-4";
-        card.innerHTML = `
+        const div = document.createElement('div');
+        div.className = "bg-white p-6 rounded-[2.5rem] border shadow-sm space-y-4";
+        div.innerHTML = `
             <div class="flex justify-between items-start">
                 <div>
-                    <span class="text-[10px] font-black text-indigo-500 uppercase cursor-pointer" onclick="profilGit('${l.userId}')">@${l.userName}</span>
+                    <p class="text-[10px] font-black text-indigo-500 uppercase">@${l.userName}</p>
                     <h4 class="text-xl font-black">${l.baslik}</h4>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="aiOzetle('${l._id}', this)" class="text-[10px] font-bold bg-purple-50 text-purple-600 px-3 py-1 rounded-full ai-glow">✨ AI ÖZETİ</button>
-                    <button onclick="navigator.clipboard.writeText('${l.url}'); alert('Kopyalandı!')" class="text-lg">📋</button>
+                    <button onclick="aiOzetle('${l._id}', this)" class="text-[10px] font-bold bg-purple-50 text-purple-600 px-3 py-1 rounded-full">✨ AI ÖZET</button>
+                    <span class="text-[10px] font-bold bg-slate-100 px-3 py-1 rounded-full">📊 ${l.clicks || 0} Tık</span>
                 </div>
             </div>
-            <div class="flex gap-2">${l.etiketler.map(t => `<span class="bg-slate-100 px-3 py-1 rounded-lg text-[9px] font-bold">#${t}</span>`).join('')}</div>
-            <div class="flex items-center justify-between mt-2 pt-4 border-t border-slate-50">
-                <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-black">GİT ↗</button>
-                <div class="flex gap-4">
-                    <button onclick="like('${l._id}')">❤️ ${l.likes?.length || 0}</button>
-                    ${l.userId === myId ? `<button onclick="sil('link','${l._id}')">🗑️</button>` : ''}
-                </div>
+            <div class="flex gap-2">${l.etiketler.map(t => `<span class="bg-slate-50 px-2 py-1 rounded text-[9px] font-bold">#${t}</span>`).join('')}</div>
+            <div class="flex items-center justify-between pt-4 border-t border-slate-50">
+                <button onclick="git('${l._id}', '${l.url}')" class="bg-indigo-600 text-white px-8 py-2 rounded-2xl text-xs font-black">AÇ ↗</button>
+                <button onclick="listeyeEkleModal('${l._id}')" class="text-xs font-black text-indigo-500">LİSTEYE EKLE +</button>
             </div>
         `;
-        document.getElementById('feedArea').appendChild(card);
+        document.getElementById('feedArea').appendChild(div);
     }
 
-    // Klasör Yapısı
-    async function loadFolders() {
-        const res = await fetch(`/my-folders?userId=${myId}`);
-        const items = await res.json();
-        const buildTree = (parentId) => {
-            return items.filter(i => String(i.parentFolder) === String(parentId))
-                .map(i => `
-                    <div class="ml-2">
-                        <div class="flex items-center justify-between group p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                            <span onclick="listeGit('${i._id}')">${i.isFolder ? '📂' : '📄'} ${i.baslik}</span>
-                            ${i.userId === myId ? `<button onclick="ortakEkle('${i._id}')" class="hidden group-hover:block text-[8px] bg-indigo-100 px-2 rounded">+TAKIM</button>` : ''}
-                        </div>
-                        <div class="folder-tree">${buildTree(i._id)}</div>
-                    </div>
-                `).join('');
-        };
-        document.getElementById('folderNav').innerHTML = buildTree(null);
-    }
-
-    // İstatistikler
     async function profilGoster() {
         const res = await fetch(`/user/stats/${myId}`);
         const s = await res.json();
         document.getElementById('feedArea').innerHTML = `
-            <div class="bg-indigo-600 p-10 rounded-[3rem] text-white">
-                <div class="flex items-center gap-6 mb-8">
-                    <img src="${s.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+s.username}" class="w-24 h-24 rounded-full border-4 border-white bg-white">
-                    <input type="file" onchange="uploadAvatar(this)" class="text-xs">
+            <div class="space-y-6">
+                <div class="bg-indigo-600 p-10 rounded-[3rem] text-white">
+                    <h2 class="text-4xl font-black">Performans Özeti</h2>
+                    <div class="grid grid-cols-3 gap-4 mt-8">
+                        <div class="bg-white/10 p-6 rounded-3xl"><b>${s.totalClicks}</b><br><small>Toplam Tıklama</small></div>
+                        <div class="bg-white/10 p-6 rounded-3xl"><b>${s.linkCount}</b><br><small>Link Sayısı</small></div>
+                        <div class="bg-white/10 p-6 rounded-3xl"><b>${s.addedByOthers}</b><br><small>Viral Yayılım</small></div>
+                    </div>
                 </div>
-                <h2 class="text-3xl font-black">@${s.username}</h2>
-                <div class="grid grid-cols-3 gap-4 mt-8">
-                    <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.linkCount}</b><br><small>Kısayol</small></div>
-                    <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.addedByOthers}</b><br><small>Viral Etki</small></div>
-                    <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.followers}</b><br><small>Takipçi</small></div>
+                <div class="bg-white p-8 rounded-[3rem] border shadow-sm">
+                    <h3 class="font-black mb-4 uppercase text-xs tracking-widest text-slate-400">Tıklama Grafiği (Son 7 Gün)</h3>
+                    <canvas id="clickChart"></canvas>
                 </div>
             </div>
         `;
+        // Basit bir grafik çizelim
+        const ctx = document.getElementById('clickChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+                datasets: [{
+                    label: 'Tıklamalar',
+                    data: [12, 19, 3, 5, 2, 3, 15], // Örnek veri
+                    borderColor: '#6366f1',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)'
+                }]
+            }
+        });
     }
 
-    async function uploadAvatar(input) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            await fetch('/user/update-avatar', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ userId: myId, avatar: e.target.result })
-            });
-            location.reload();
-        };
-        reader.readAsDataURL(input.files[0]);
+    // Klasörleme (Hiyerarşi)
+    async function loadFolders() {
+        const res = await fetch(`/my-folders?userId=${myId}`);
+        const items = await res.json();
+        const build = (pid) => items.filter(i => String(i.parentFolder) === String(pid))
+            .map(i => `<div class="ml-2"><div class="p-2 hover:bg-slate-50 rounded-xl cursor-pointer" onclick="listeGit('${i._id}')">${i.isFolder ? '📂' : '📄'} ${i.baslik}</div><div class="folder-tree">${build(i._id)}</div></div>`).join('');
+        document.getElementById('folderNav').innerHTML = build(null);
     }
 
-    // Sonsuz Kaydırma
     const obs = new IntersectionObserver(e => { if(e[0].isIntersecting) { page++; loadLinks(); } });
     obs.observe(document.getElementById('scroll-anchor'));
 
@@ -140,16 +116,7 @@
         data.forEach(l => renderLink(l));
     }
 
-    async function sil(type, id) {
-        if(confirm('Silmek istediğine emin misin?')) {
-            await fetch(`/delete/${type}/${id}`, { method: 'DELETE' });
-            location.reload();
-        }
-    }
-
-    function cikis() { localStorage.clear(); location.reload(); }
-
-    window.onload = () => { if(!myId) { alert("Giriş yapmalısınız!"); } else { loadLinks(); loadFolders(); } };
+    window.onload = () => { loadLinks(); loadFolders(); };
 </script>
 </body>
 </html>

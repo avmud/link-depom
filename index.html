@@ -2,10 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>LinkUp v20 | AI & Teamwork</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkUp v20 | Ultimate</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .folder-tree { margin-left: 1.2rem; border-left: 2px solid #e2e8f0; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .folder-tree { margin-left: 1.2rem; border-left: 2px solid #f1f5f9; }
         .ai-glow { animation: glow 2s infinite alternate; }
         @keyframes glow { from { box-shadow: 0 0 5px #6366f1; } to { box-shadow: 0 0 15px #a855f7; } }
     </style>
@@ -19,23 +22,25 @@
             </div>
 
         <div class="mt-6 pt-6 border-t space-y-2">
-            <button onclick="profilGoster()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl">👤 Profil & İstatistikler</button>
-            <button onclick="location.reload()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl">🌍 Global Akış</button>
+            <button onclick="profilGoster()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold">👤 Profil & İstatistikler</button>
+            <button onclick="window.location.reload()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold">🌍 Global Akış</button>
+            <button onclick="cikis()" class="w-full text-left p-3 text-red-500 font-bold">🚪 Çıkış</button>
         </div>
     </aside>
 
-    <main class="flex-1 overflow-y-auto p-8" id="mainContainer">
+    <main class="flex-1 overflow-y-auto p-8" id="mainScroll">
         <div id="feedArea" class="max-w-4xl mx-auto space-y-6"></div>
-        <div id="scroll-anchor" class="h-10"></div>
+        <div id="scroll-anchor" class="h-20"></div>
     </main>
 
 <script>
     let page = 1;
+    const API = ""; // Aynı sunucu olduğu için boş
     const myId = localStorage.getItem('userId');
 
-    // 1. AI Özetleme Fonksiyonu
+    // AI Özetleme
     async function aiOzetle(linkId, btn) {
-        btn.innerHTML = "🌀 AI Analiz Ediyor...";
+        btn.innerHTML = "🌀 Analiz...";
         const res = await fetch('/links/summarize', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -46,59 +51,44 @@
         btn.innerHTML = "✨ AI Özeti";
     }
 
-    // 2. Takım Çalışması: Ortak Ekleme
-    async function ortakEkle(listId) {
-        const username = prompt("Yetki verilecek kullanıcının adını girin:");
-        if(!username) return;
-        await fetch('/lists/add-collaborator', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ listId, collaboratorUsername: username })
-        });
-        alert("Eklendi! Bu kullanıcı artık klasörü güncelleyebilir.");
-    }
-
-    // 3. Link Kartı Render (Mevcut tüm özellikler dahil)
+    // Link Kartı Render
     function renderLink(l) {
         const card = document.createElement('div');
         card.className = "bg-white p-6 rounded-[2.5rem] border shadow-sm flex flex-col gap-4";
         card.innerHTML = `
             <div class="flex justify-between items-start">
                 <div>
-                    <span class="text-[10px] font-black text-indigo-500 uppercase">@${l.userName}</span>
+                    <span class="text-[10px] font-black text-indigo-500 uppercase cursor-pointer" onclick="profilGit('${l.userId}')">@${l.userName}</span>
                     <h4 class="text-xl font-black">${l.baslik}</h4>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="aiOzetle('${l._id}', this)" class="text-[10px] font-bold bg-purple-50 text-purple-600 px-3 py-1 rounded-full ai-glow">✨ AI ÖZETİ</button>
-                    <button onclick="navigator.clipboard.writeText('${l.url}')" class="text-lg">📋</button>
+                    <button onclick="navigator.clipboard.writeText('${l.url}'); alert('Kopyalandı!')" class="text-lg">📋</button>
                 </div>
             </div>
-            <div class="flex gap-2">
-                ${l.etiketler.map(t => `<span class="bg-slate-100 px-3 py-1 rounded-lg text-[9px] font-bold">#${t}</span>`).join('')}
-            </div>
+            <div class="flex gap-2">${l.etiketler.map(t => `<span class="bg-slate-100 px-3 py-1 rounded-lg text-[9px] font-bold">#${t}</span>`).join('')}</div>
             <div class="flex items-center justify-between mt-2 pt-4 border-t border-slate-50">
-                <button onclick="listeyeEkleModal('${l._id}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-black">LİSTEYE EKLE</button>
+                <button onclick="window.open('${l.url}')" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-xs font-black">GİT ↗</button>
                 <div class="flex gap-4">
-                    <button onclick="like('${l._id}')">❤️ ${l.likes.length}</button>
-                    <button onclick="report('${l._id}')">🚩</button>
+                    <button onclick="like('${l._id}')">❤️ ${l.likes?.length || 0}</button>
+                    ${l.userId === myId ? `<button onclick="sil('link','${l._id}')">🗑️</button>` : ''}
                 </div>
             </div>
         `;
         document.getElementById('feedArea').appendChild(card);
     }
 
-    // 4. Hiyerarşik Yapı ve Klasörleme
+    // Klasör Yapısı
     async function loadFolders() {
         const res = await fetch(`/my-folders?userId=${myId}`);
         const items = await res.json();
-        
         const buildTree = (parentId) => {
             return items.filter(i => String(i.parentFolder) === String(parentId))
                 .map(i => `
                     <div class="ml-2">
                         <div class="flex items-center justify-between group p-2 hover:bg-slate-50 rounded-xl cursor-pointer">
-                            <span onclick="listeGit('${i._id}')">${i.isFolder ? '📂' : '📄'} ${i.baslik} ${i.isPrivate ? '🔒' : ''}</span>
-                            <button onclick="ortakEkle('${i._id}')" class="hidden group-hover:block text-[10px] bg-indigo-100 px-2 rounded-lg">➕ Takım</button>
+                            <span onclick="listeGit('${i._id}')">${i.isFolder ? '📂' : '📄'} ${i.baslik}</span>
+                            ${i.userId === myId ? `<button onclick="ortakEkle('${i._id}')" class="hidden group-hover:block text-[8px] bg-indigo-100 px-2 rounded">+TAKIM</button>` : ''}
                         </div>
                         <div class="folder-tree">${buildTree(i._id)}</div>
                     </div>
@@ -107,7 +97,40 @@
         document.getElementById('folderNav').innerHTML = buildTree(null);
     }
 
-    // Sonsuz Kaydırma Başlatıcı
+    // İstatistikler
+    async function profilGoster() {
+        const res = await fetch(`/user/stats/${myId}`);
+        const s = await res.json();
+        document.getElementById('feedArea').innerHTML = `
+            <div class="bg-indigo-600 p-10 rounded-[3rem] text-white">
+                <div class="flex items-center gap-6 mb-8">
+                    <img src="${s.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+s.username}" class="w-24 h-24 rounded-full border-4 border-white bg-white">
+                    <input type="file" onchange="uploadAvatar(this)" class="text-xs">
+                </div>
+                <h2 class="text-3xl font-black">@${s.username}</h2>
+                <div class="grid grid-cols-3 gap-4 mt-8">
+                    <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.linkCount}</b><br><small>Kısayol</small></div>
+                    <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.addedByOthers}</b><br><small>Viral Etki</small></div>
+                    <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.followers}</b><br><small>Takipçi</small></div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function uploadAvatar(input) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            await fetch('/user/update-avatar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ userId: myId, avatar: e.target.result })
+            });
+            location.reload();
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    // Sonsuz Kaydırma
     const obs = new IntersectionObserver(e => { if(e[0].isIntersecting) { page++; loadLinks(); } });
     obs.observe(document.getElementById('scroll-anchor'));
 
@@ -117,7 +140,16 @@
         data.forEach(l => renderLink(l));
     }
 
-    window.onload = () => { loadLinks(); loadFolders(); };
+    async function sil(type, id) {
+        if(confirm('Silmek istediğine emin misin?')) {
+            await fetch(`/delete/${type}/${id}`, { method: 'DELETE' });
+            location.reload();
+        }
+    }
+
+    function cikis() { localStorage.clear(); location.reload(); }
+
+    window.onload = () => { if(!myId) { alert("Giriş yapmalısınız!"); } else { loadLinks(); loadFolders(); } };
 </script>
 </body>
 </html>

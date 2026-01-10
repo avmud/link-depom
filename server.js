@@ -41,77 +41,51 @@ const Link = mongoose.model('Link', {
     listId: { type: mongoose.Schema.Types.ObjectId, ref: 'List' },
     userId: mongoose.Schema.Types.ObjectId, userName: String,
     aiSummary: String,
-    clicks: { type: Number, default: 0 }, // Tıklama Sayısı
-    clickHistory: [{ date: Date, count: Number }], // Grafik için geçmiş
+    clicks: { type: Number, default: 0 },
+    clickHistory: [{ date: Date, count: Number }],
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     tarih: { type: Date, default: Date.now }
 });
 
-const Report = mongoose.model('Report', { targetId: String, reason: String });
-
 // --- ROTALAR ---
 
-app.use(express.static(__dirname));
+// Önemli: Statik dosyalar API rotalarından önce tanımlanmalı
+app.use(express.static(path.join(__dirname)));
 
-// 1. Tıklama Sayacı (Analitik)
-app.post('/links/click/:id', async (req, res) => {
+// Tıklama Analitiği
+app.post('/api/links/click/:id', async (req, res) => {
     const today = new Date().setHours(0,0,0,0);
     const link = await Link.findById(req.params.id);
-    link.clicks += 1;
-    
-    // Günlük geçmişi güncelle
+    if(!link) return res.status(404).send();
+    link.clicks = (link.clicks || 0) + 1;
     let historyIndex = link.clickHistory.findIndex(h => h.date.getTime() === today);
     if(historyIndex > -1) link.clickHistory[historyIndex].count += 1;
-    else link.clickHistory.push({ date: today, count: 1 });
-    
+    else link.clickHistory.push({ date: new Date(today), count: 1 });
     await link.save();
     res.json({ success: true, clicks: link.clicks });
 });
 
-// 2. Auth
-app.post('/auth/login', async (req, res) => {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).json({ error: "Hata" });
-    const token = jwt.sign({ userId: user._id }, SECRET_KEY);
-    res.json({ token, userId: user._id, username: user.username, avatar: user.avatar });
-});
-
-// 3. Veri Akışı (Sonsuz Kaydırma)
-app.get('/data', async (req, res) => {
+app.get('/api/data', async (req, res) => {
     const { page = 1 } = req.query;
     const links = await Link.find().sort({ tarih: -1 }).skip((page - 1) * 10).limit(10).lean();
     res.json(links);
 });
 
-// 4. Klasör ve Hiyerarşi
-app.get('/my-folders', async (req, res) => {
-    const lists = await List.find({ $or: [{ userId: req.query.userId }, { collaborators: req.query.userId }] }).lean();
-    res.json(lists);
-});
-
-// 5. AI ve Diğer İşlemler
-app.post('/links/summarize', async (req, res) => {
-    const link = await Link.findById(req.body.linkId);
-    if (!link.aiSummary) {
-        link.aiSummary = "AI tarafından oluşturulan içerik özeti burada yer alır.";
-        await link.save();
-    }
-    res.json({ summary: link.aiSummary });
-});
-
-app.get('/user/stats/:id', async (req, res) => {
-    const uid = req.params.id;
-    const user = await User.findById(uid);
-    const links = await Link.find({ userId: uid });
+app.get('/api/user/stats/:id', async (req, res) => {
+    const user = await User.findById(req.params.id);
+    const links = await Link.find({ userId: req.params.id });
     const totalClicks = links.reduce((acc, curr) => acc + (curr.clicks || 0), 0);
     res.json({ 
         username: user.username, avatar: user.avatar,
         linkCount: links.length, totalClicks, addedByOthers: user.addedCount,
-        followers: user.followers.length
+        followers: user.followers.length, following: user.following.length
     });
 });
 
-app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+// HATA DÜZELTME: Catch-all rotasını regex olmadan tanımlıyoruz
+app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 LinkUp v21: Port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Sunucu v22 Hazır: Port ${PORT}`));

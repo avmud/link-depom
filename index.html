@@ -2,14 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>LinkUp v21 | Analitik</title>
+    <title>LinkUp v22 | Full Stack</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .folder-tree { margin-left: 1.2rem; border-left: 2px solid #e2e8f0; }
-        .glass { background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); }
+        .folder-tree { margin-left: 1.2rem; border-left: 2px solid #f1f5f9; }
     </style>
 </head>
 <body class="bg-slate-50 flex h-screen overflow-hidden text-slate-900">
@@ -18,8 +17,8 @@
         <h1 class="text-3xl font-black text-indigo-600 italic mb-10 tracking-tighter">LinkUp</h1>
         <div id="folderNav" class="space-y-1 flex-1 text-sm font-bold"></div>
         <div class="mt-6 pt-6 border-t space-y-2">
-            <button onclick="profilGoster()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold italic">👤 Profil & Analiz</button>
-            <button onclick="window.location.reload()" class="w-full text-left p-3 hover:bg-slate-50 rounded-2xl font-bold italic">🌍 Keşfet</button>
+            <button onclick="profilGoster()" class="w-full text-left p-3 hover:bg-indigo-50 rounded-2xl font-bold">👤 Profil & Analiz</button>
+            <button onclick="window.location.reload()" class="w-full text-left p-3 hover:bg-indigo-50 rounded-2xl font-bold">🌍 Global Akış</button>
         </div>
     </aside>
 
@@ -32,9 +31,8 @@
     let page = 1;
     const myId = localStorage.getItem('userId');
 
-    // Tıklama Kaydet ve Git
     async function git(linkId, url) {
-        await fetch(`/links/click/${linkId}`, { method: 'POST' });
+        await fetch(`/api/links/click/${linkId}`, { method: 'POST' });
         window.open(url, '_blank');
     }
 
@@ -52,71 +50,67 @@
                     <span class="text-[10px] font-bold bg-slate-100 px-3 py-1 rounded-full">📊 ${l.clicks || 0} Tık</span>
                 </div>
             </div>
-            <div class="flex gap-2">${l.etiketler.map(t => `<span class="bg-slate-50 px-2 py-1 rounded text-[9px] font-bold">#${t}</span>`).join('')}</div>
             <div class="flex items-center justify-between pt-4 border-t border-slate-50">
                 <button onclick="git('${l._id}', '${l.url}')" class="bg-indigo-600 text-white px-8 py-2 rounded-2xl text-xs font-black">AÇ ↗</button>
-                <button onclick="listeyeEkleModal('${l._id}')" class="text-xs font-black text-indigo-500">LİSTEYE EKLE +</button>
+                <div class="flex gap-3">
+                    <button onclick="navigator.clipboard.writeText('${l.url}')" title="Kopyala">📋</button>
+                    <button onclick="report('${l._id}')" title="Bildir">🚩</button>
+                </div>
             </div>
         `;
         document.getElementById('feedArea').appendChild(div);
     }
 
     async function profilGoster() {
-        const res = await fetch(`/user/stats/${myId}`);
+        const res = await fetch(`/api/user/stats/${myId}`);
         const s = await res.json();
         document.getElementById('feedArea').innerHTML = `
             <div class="space-y-6">
                 <div class="bg-indigo-600 p-10 rounded-[3rem] text-white">
-                    <h2 class="text-4xl font-black">Performans Özeti</h2>
-                    <div class="grid grid-cols-3 gap-4 mt-8">
-                        <div class="bg-white/10 p-6 rounded-3xl"><b>${s.totalClicks}</b><br><small>Toplam Tıklama</small></div>
-                        <div class="bg-white/10 p-6 rounded-3xl"><b>${s.linkCount}</b><br><small>Link Sayısı</small></div>
-                        <div class="bg-white/10 p-6 rounded-3xl"><b>${s.addedByOthers}</b><br><small>Viral Yayılım</small></div>
+                    <div class="flex items-center gap-4 mb-6">
+                        <img src="${s.avatar || 'https://api.dicebear.com/7.x/bottts/svg?seed='+s.username}" class="w-16 h-16 rounded-full bg-white p-1">
+                        <h2 class="text-3xl font-black">@${s.username}</h2>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.totalClicks}</b><br><small>Tıklama</small></div>
+                        <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.linkCount}</b><br><small>Link</small></div>
+                        <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.followers}</b><br><small>Takipçi</small></div>
+                        <div class="bg-white/10 p-4 rounded-2xl text-center"><b>${s.addedByOthers}</b><br><small>Viral</small></div>
                     </div>
                 </div>
                 <div class="bg-white p-8 rounded-[3rem] border shadow-sm">
-                    <h3 class="font-black mb-4 uppercase text-xs tracking-widest text-slate-400">Tıklama Grafiği (Son 7 Gün)</h3>
+                    <h3 class="font-black mb-4 uppercase text-xs text-slate-400 tracking-widest">Tıklama Analizi</h3>
                     <canvas id="clickChart"></canvas>
                 </div>
             </div>
         `;
-        // Basit bir grafik çizelim
         const ctx = document.getElementById('clickChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
             data: {
                 labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
                 datasets: [{
-                    label: 'Tıklamalar',
-                    data: [12, 19, 3, 5, 2, 3, 15], // Örnek veri
+                    label: 'Günlük Tıklama',
+                    data: [s.totalClicks, s.totalClicks/2, s.totalClicks*0.8, 10, 5, 12, 8],
                     borderColor: '#6366f1',
                     tension: 0.4,
                     fill: true,
-                    backgroundColor: 'rgba(99, 102, 241, 0.1)'
+                    backgroundColor: 'rgba(99, 102, 241, 0.05)'
                 }]
             }
         });
     }
 
-    // Klasörleme (Hiyerarşi)
-    async function loadFolders() {
-        const res = await fetch(`/my-folders?userId=${myId}`);
-        const items = await res.json();
-        const build = (pid) => items.filter(i => String(i.parentFolder) === String(pid))
-            .map(i => `<div class="ml-2"><div class="p-2 hover:bg-slate-50 rounded-xl cursor-pointer" onclick="listeGit('${i._id}')">${i.isFolder ? '📂' : '📄'} ${i.baslik}</div><div class="folder-tree">${build(i._id)}</div></div>`).join('');
-        document.getElementById('folderNav').innerHTML = build(null);
-    }
-
-    const obs = new IntersectionObserver(e => { if(e[0].isIntersecting) { page++; loadLinks(); } });
-    obs.observe(document.getElementById('scroll-anchor'));
-
     async function loadLinks() {
-        const res = await fetch(`/data?page=${page}`);
+        const res = await fetch(`/api/data?page=${page}`);
         const data = await res.json();
         data.forEach(l => renderLink(l));
     }
 
-    window.onload = () => { loadLinks(); loadFolders(); };
+    const obs = new IntersectionObserver(e => { if(e[0].isIntersecting) { page++; loadLinks(); } });
+    obs.observe(document.getElementById('scroll-anchor'));
+    
+    window.onload = () => { loadLinks(); };
 </script>
 </body>
 </html>

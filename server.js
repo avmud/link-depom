@@ -4,7 +4,6 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 app.use(cors());
@@ -33,8 +32,7 @@ const List = mongoose.model('List', {
     isFolder: { type: Boolean, default: false },
     isPrivate: { type: Boolean, default: false },
     password: { type: String },
-    collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    collaborators: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 const Link = mongoose.model('Link', {
@@ -44,33 +42,44 @@ const Link = mongoose.model('Link', {
     aiSummary: String,
     clicks: { type: Number, default: 0 },
     clickHistory: [{ date: Date, count: Number }],
-    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     tarih: { type: Date, default: Date.now }
 });
 
 // --- ROTALAR ---
 
-// Google Doğrulama Dosyası İçin Özel Ayar (DOĞRULAMA HATASINI ÇÖZER)
+// Google Doğrulama (Resimdeki hatayı çözer)
 app.get('/google2907470659972352.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'google2907470659972352.html'));
 });
 
-// Statik Dosyalar
 app.use(express.static(path.join(__dirname)));
 
-// API Rotaları (Çakışmayı önlemek için /api/ ön ekiyle)
+// Auth Rotaları (Eksikti, eklendi)
+app.post('/api/auth/register', async (req, res) => {
+    const hashed = await bcrypt.hash(req.body.password, 10);
+    const user = new User({...req.body, password: hashed});
+    await user.save();
+    res.json({ success: true });
+});
+
+app.post('/api/auth/login', async (req, res) => {
+    const user = await User.findOne({ email: req.body.email });
+    if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).send();
+    const token = jwt.sign({ userId: user._id }, SECRET_KEY);
+    res.json({ token, userId: user._id, username: user.username, avatar: user.avatar });
+});
+
+// Analitik Rotaları
 app.post('/api/links/click/:id', async (req, res) => {
-    try {
-        const today = new Date().setHours(0,0,0,0);
-        const link = await Link.findById(req.params.id);
-        if(!link) return res.status(404).send();
-        link.clicks = (link.clicks || 0) + 1;
-        let historyIndex = link.clickHistory.findIndex(h => h.date && h.date.getTime() === today);
-        if(historyIndex > -1) link.clickHistory[historyIndex].count += 1;
-        else link.clickHistory.push({ date: new Date(today), count: 1 });
-        await link.save();
-        res.json({ success: true, clicks: link.clicks });
-    } catch (e) { res.status(500).json(e); }
+    const today = new Date().setHours(0,0,0,0);
+    const link = await Link.findById(req.params.id);
+    if(!link) return res.status(404).send();
+    link.clicks = (link.clicks || 0) + 1;
+    let historyIndex = link.clickHistory.findIndex(h => h.date && new Date(h.date).getTime() === today);
+    if(historyIndex > -1) link.clickHistory[historyIndex].count += 1;
+    else link.clickHistory.push({ date: new Date(today), count: 1 });
+    await link.save();
+    res.json({ success: true });
 });
 
 app.get('/api/data', async (req, res) => {
@@ -90,17 +99,16 @@ app.get('/api/user/stats/:id', async (req, res) => {
     });
 });
 
-// Hiyerarşi Getirme
 app.get('/api/my-folders', async (req, res) => {
     const lists = await List.find({ $or: [{ userId: req.query.userId }, { collaborators: req.query.userId }] }).lean();
     res.json(lists);
 });
 
-// Catch-all: API dışındaki her şeyi index.html'e yönlendir
+// Catch-all
 app.get('*', (req, res) => {
-    if (req.path.startsWith('/api')) return res.status(404).send('API bulunamadı');
+    if (req.path.startsWith('/api')) return res.status(404).send();
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`🚀 LinkUp v23 Hazır: Port ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 LinkUp v24 Yayında`));
